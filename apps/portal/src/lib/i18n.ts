@@ -77,6 +77,23 @@ const STRINGS: Record<string, LocalizedText> = {
     en: 'Turns off particles and effects. Helps older phones.',
   },
   'settings.leftHanded': { cs: 'Ovládání pro leváky', en: 'Left-handed controls' },
+  'profile.title': { cs: 'Tvůj profil', en: 'Your profile' },
+  'profile.localOnly': {
+    cs: 'Zatím se všechno počítá jen u tebe v prohlížeči. S účtem se profil přenese mezi zařízeními.',
+    en: 'For now everything is stored in your browser. With an account your profile follows you.',
+  },
+  'profile.bestStreak': { cs: 'Nejdelší série', en: 'Best streak' },
+  'profile.todayDone': { cs: 'Dnes hotovo', en: 'Done today' },
+  'profile.badges': { cs: 'Odznaky', en: 'Badges' },
+  'profile.globalBadges': { cs: 'Odznaky portálu', en: 'Portal badges' },
+  'profile.gameBadges': { cs: 'Odznaky z her', en: 'Game badges' },
+  'profile.hiddenBadge': { cs: 'Skrytý odznak', en: 'Hidden badge' },
+  'profile.hiddenBadgeHelp': {
+    cs: 'Objeví se, až ho získáš.',
+    en: 'It shows up once you earn it.',
+  },
+  'nav.profile': { cs: 'Profil', en: 'Profile' },
+
   'settings.controls': { cs: 'Ovládání', en: 'Controls' },
   'settings.language': { cs: 'Jazyk', en: 'Language' },
 };

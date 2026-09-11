@@ -4,6 +4,7 @@ import type { GameModule } from '@vevit-games/engine';
 import { catalog, byCategory, bySlug, nonEmptyCategories } from '../lib/catalog.js';
 import { loadFavorites, toggleFavorite, loadRecent, type PortalSettings } from '../lib/settings.js';
 import { navigate } from '../lib/router.js';
+import { DailyPanel } from '../components/DailyPanel.js';
 import type { I18n } from '../lib/i18n.js';
 
 /** Hra dne se mění o půlnoci a je pro všechny stejná. */
@@ -108,22 +109,7 @@ export function HomePage({ i18n, settings }: { i18n: I18n; settings: PortalSetti
           </span>
         </a>
 
-        <aside className="vyzvy">
-          <h2 className="vyzvy__nazev">{i18n.t('home.daily')}</h2>
-          <p className="vyzvy__popis">{i18n.t('home.dailyBody')}</p>
-          <ul className="vyzvy__seznam">
-            {catalog
-              .filter((entry) => entry.manifest.modes.some((m) => m.id === 'denni'))
-              .slice(0, 3)
-              .map((entry) => (
-                <li key={entry.manifest.slug}>
-                  <a href={`/${i18n.locale}/${entry.manifest.slug}?rezim=denni`}>
-                    {entry.manifest.title[i18n.locale]}
-                  </a>
-                </li>
-              ))}
-          </ul>
-        </aside>
+        <DailyPanel i18n={i18n} />
       </section>
 
       {recent.length > 0 && (

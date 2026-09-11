@@ -28,9 +28,21 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    // Každá hra má vlastní chunk — portál se nesmí stahovat kvůli jedné hře celý.
     rollupOptions: {
+      input: {
+        // Offline stránka je samostatný vstup: nesmí táhnout React ani
+        // shell portálu, protože se servíruje právě tehdy, když se nic
+        // dalšího stáhnout nedá.
+        main: resolve(import.meta.dirname, 'index.html'),
+        offline: resolve(import.meta.dirname, 'offline.html'),
+        sw: resolve(import.meta.dirname, 'src/sw.ts'),
+      },
       output: {
+        // Service worker musí ležet v kořeni a mít stálý název, jinak by
+        // po nasazení neřídil celý rozsah.
+        entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'assets/[name]-[hash].js'),
+        // Každá hra má vlastní chunk — portál se nesmí stahovat kvůli
+        // jediné hře celý.
         manualChunks(id: string) {
           if (id.includes('/titles/')) {
             const match = /\/titles\/([^/]+)\//.exec(id);

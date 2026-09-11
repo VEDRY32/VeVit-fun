@@ -97,3 +97,28 @@ export function recordPlayed(slug: string): void {
   const next = [slug, ...loadRecent().filter((s) => s !== slug)].slice(0, RECENT_LIMIT);
   writeList(RECENT_KEY, next);
 }
+
+// --- Počty odehraných partií ------------------------------------------------
+
+const PLAYS_KEY = 'vevit.games.plays';
+
+/** slug → kolikrát hráč hru dohrál. Podklad pro odznaky a profil. */
+export function loadPlays(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(PLAYS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, number>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+export function savePlays(plays: Record<string, number>): void {
+  try {
+    localStorage.setItem(PLAYS_KEY, JSON.stringify(plays));
+  } catch {
+    // Bez úložiště se počty neuloží; hrát to nebrání.
+  }
+}

@@ -1048,3 +1048,206 @@ input[type='checkbox'] {
   border-color: var(--zelena);
   color: var(--zelena);
 }
+
+/* --- Denní výzvy --------------------------------------------------------- */
+
+.vyzvy__hlavicka {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  margin-bottom: var(--s-sm);
+}
+
+.vyzvy__cislo {
+  color: var(--text-tlumeny);
+  font-size: var(--fs-xs);
+}
+
+.vyzvy__seznam a {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+.vyzvy__stav {
+  color: var(--text-tlumeny);
+}
+
+.vyzvy__seznam a.je-hotovo .vyzvy__stav {
+  color: var(--zelena);
+}
+
+.vyzvy__skore {
+  color: var(--text-tlumeny);
+  font-size: var(--fs-xs);
+}
+
+.vyzvy__pata {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  margin-top: var(--s-md);
+  padding-top: var(--s-sm);
+  border-top: 1px solid var(--linka);
+  font-size: var(--fs-xs);
+  color: var(--text-tlumeny);
+}
+
+.vyzvy__serie {
+  color: var(--kat-arkady);
+}
+
+/* --- Profil a odznaky ---------------------------------------------------- */
+
+.profil {
+  max-width: 760px;
+}
+
+.profil h1 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--s-sm);
+}
+
+.profil__poznamka {
+  color: var(--text-tlumeny);
+  font-size: var(--fs-xs);
+  margin-bottom: var(--s-lg);
+}
+
+.profil h2 {
+  font-size: var(--fs-md);
+  margin: var(--s-xl) 0 var(--s-md);
+  padding-bottom: var(--s-sm);
+  border-bottom: 1px solid var(--linka);
+}
+
+.profil__prehled {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--s-md);
+}
+
+.profil__prehled > div {
+  background: var(--pult);
+  border: 1px solid var(--linka);
+  border-radius: var(--r-tile);
+  padding: var(--s-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profil__cislo {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--zelena);
+}
+
+.profil__popisek {
+  font-size: var(--fs-xs);
+  color: var(--text-tlumeny);
+}
+
+.profil__hry {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-sm);
+}
+
+.profil__hry a {
+  display: block;
+  padding: var(--s-sm) var(--s-md);
+  background: var(--pult);
+  border: 1px solid var(--linka);
+  border-left: 3px solid var(--akcent, var(--linka));
+  border-radius: var(--r-button);
+  font-size: var(--fs-xs);
+}
+
+.profil__hry a:hover {
+  border-color: var(--akcent);
+}
+
+.odznaky {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--s-sm);
+}
+
+.odznaky li {
+  display: flex;
+  gap: var(--s-md);
+  align-items: flex-start;
+  padding: var(--s-md);
+  background: var(--pult);
+  border: 1px solid var(--linka);
+  border-radius: var(--r-tile);
+  /* Nezískaný odznak je tlumený, ale pořád čitelný. */
+  opacity: 0.55;
+}
+
+.odznaky li.je-ziskany {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--zelena) 45%, var(--linka));
+}
+
+.odznaky__znak {
+  font-size: var(--fs-md);
+  color: var(--text-tlumeny);
+  line-height: 1.2;
+}
+
+.odznaky li.je-ziskany .odznaky__znak {
+  color: var(--zelena);
+}
+
+.odznaky__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-xs);
+}
+
+.odznaky__text small {
+  color: var(--text-tlumeny);
+}
+
+/* --- Oznámení o novém odznaku -------------------------------------------- */
+
+.odznak-toast {
+  position: fixed;
+  right: var(--s-md);
+  bottom: var(--s-md);
+  z-index: 60;
+  max-width: 320px;
+  padding: var(--s-md);
+  background: var(--pult);
+  border: 1px solid var(--zelena);
+  border-radius: var(--r-tile);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
+  font-size: var(--fs-xs);
+}
+
+.odznak-toast p {
+  margin: 0;
+}
+
+.odznak-toast button {
+  align-self: flex-end;
+  padding: 5px var(--s-md);
+  border-radius: var(--r-field);
+  border: 1px solid var(--linka);
+  background: var(--noc);
+  font-size: var(--fs-xs);
+}

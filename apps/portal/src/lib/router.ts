@@ -15,6 +15,7 @@ export type Route =
   | { name: 'category'; locale: Locale; category: string }
   | { name: 'search'; locale: Locale; query: string }
   | { name: 'settings'; locale: Locale }
+  | { name: 'profile'; locale: Locale }
   | { name: 'notFound'; locale: Locale };
 
 export function parseRoute(pathname: string, search: string): Route {
@@ -27,6 +28,7 @@ export function parseRoute(pathname: string, search: string): Route {
   if (rest.length === 0) return { name: 'home', locale };
   if (rest[0] === 'kategorie' && rest[1]) return { name: 'category', locale, category: rest[1] };
   if (rest[0] === 'nastaveni') return { name: 'settings', locale };
+  if (rest[0] === 'profil') return { name: 'profile', locale };
   if (rest[0] === 'hledat') {
     return { name: 'search', locale, query: new URLSearchParams(search).get('q') ?? '' };
   }
@@ -41,6 +43,7 @@ export const hrefFor = (route: Route): string => {
     case 'category': return `/${route.locale}/kategorie/${route.category}`;
     case 'search': return `/${route.locale}/hledat?q=${encodeURIComponent(route.query)}`;
     case 'settings': return `/${route.locale}/nastaveni`;
+    case 'profile': return `/${route.locale}/profil`;
     case 'notFound': return `/${route.locale}/`;
   }
 };

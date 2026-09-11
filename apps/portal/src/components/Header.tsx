@@ -56,6 +56,7 @@ export function Header({ i18n, locale }: { i18n: I18n; locale: Locale }): JSX.El
             </ul>
           )}
         </div>
+        <a href={`/${locale}/profil`}>{i18n.t('nav.profile')}</a>
         <a href={`/${locale}/nastaveni`}>{i18n.t('nav.settings')}</a>
       </nav>
     </header>

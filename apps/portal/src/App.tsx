@@ -8,6 +8,7 @@ import { GamePage } from './pages/GamePage.js';
 import { CategoryPage } from './pages/CategoryPage.js';
 import { SearchPage } from './pages/SearchPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { ProfilePage } from './pages/ProfilePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
 
 export function App(): JSX.Element {
@@ -56,6 +57,7 @@ export function App(): JSX.Element {
         {route.name === 'settings' && (
           <SettingsPage i18n={i18n} settings={settings} onChange={updateSettings} />
         )}
+        {route.name === 'profile' && <ProfilePage i18n={i18n} />}
         {route.name === 'notFound' && <NotFoundPage i18n={i18n} />}
       </main>
       {chrome && (

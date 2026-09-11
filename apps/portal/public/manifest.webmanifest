@@ -1,0 +1,18 @@
+{
+  "name": "VeVit Games",
+  "short_name": "VeVit Games",
+  "description": "Herní portál VeVit: logika, arkády, akce i hry pro víc hráčů. Zdarma, bez instalace.",
+  "start_url": "/cs/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F1C3F",
+  "theme_color": "#0F1C3F",
+  "lang": "cs",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

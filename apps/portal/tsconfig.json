@@ -5,5 +5,8 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+  // sw.ts se kontroluje zvlášť přes tsconfig.sw.json — potřebuje
+  // WebWorker lib místo DOM.
+  "exclude": ["src/sw.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "offline/**/*.ts", "vite.config.ts"]
 }

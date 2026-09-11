@@ -18,3 +18,16 @@ createRoot(container).render(
     <App />
   </StrictMode>,
 );
+
+/**
+ * Service worker se registruje až po načtení stránky, aby nesoutěžil
+ * o pásmo s prvním vykreslením. Ve vývoji ho neregistrujeme vůbec —
+ * jinak by cachoval kód, který se za minutu změní.
+ */
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+      // Bez service workeru portál funguje dál, jen nebude offline.
+    });
+  });
+}

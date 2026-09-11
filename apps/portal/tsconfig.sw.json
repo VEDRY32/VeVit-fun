@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Service worker neběží v okně: `self` je ServiceWorkerGlobalScope,
+    // ne Window, a DOM typy by tu jen mátly.
+    "lib": ["ES2022", "WebWorker"],
+    "types": ["vite/client"]
+  },
+  "include": ["src/sw.ts", "src/vite-env.d.ts"]
+}

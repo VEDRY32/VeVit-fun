@@ -13,7 +13,7 @@
     "build": "node scripts/check-ip.mjs && pnpm typecheck && pnpm --filter @vevit-games/portal build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/rules --noEmit",
+    "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/rules --noEmit && tsc -p packages/ui --noEmit && tsc -p apps/portal --noEmit && tsc -p apps/portal/tsconfig.sw.json --noEmit && tsc -p apps/api --noEmit && tsc -p apps/worker --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "fonts": "node scripts/fetch-fonts.mjs",

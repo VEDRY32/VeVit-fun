@@ -15,7 +15,7 @@ const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173';
 const OUT = process.env.SHOT_DIR ?? resolve(process.cwd(), 'screenshots');
 const GAMES = [
   'kostkopad', 'petipismenka', 'zdvojka', 'had', 'hledac-min', 'pasiansy',
-  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec',
+  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec',
 ];
 
 const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX', 'KeyZ', 'KeyC'];
@@ -79,6 +79,31 @@ async function run() {
     await home.waitForTimeout(1200);
     await home.screenshot({ path: `${OUT}/${label}-domu.png`, fullPage: label === 'desktop' });
     checkHome();
+
+    // --- Offline stránka ---
+    // Není to chybová hláška, ale hratelný Běžec; musí běžet bez portálu.
+    const offline = await context.newPage();
+    const checkOffline = watchErrors(offline, `${label} · offline`);
+    await offline.goto(`${BASE}/offline.html`, { waitUntil: 'networkidle' });
+    const offlineCanvas = await offline.waitForSelector('#hra canvas', { timeout: 8000 }).catch(() => null);
+    if (!offlineCanvas) {
+      failures++;
+      console.error(`✗ ${label} · offline: plátno se neobjevilo`);
+    } else {
+      await offline.keyboard.press('Space');
+      await offline.waitForTimeout(600);
+      await offline.screenshot({ path: `${OUT}/${label}-offline.png` });
+    }
+    checkOffline();
+    await offline.close();
+
+    // --- Profil ---
+    const profile = await context.newPage();
+    const checkProfile = watchErrors(profile, `${label} · profil`);
+    await profile.goto(`${BASE}/cs/profil`, { waitUntil: 'networkidle' });
+    await profile.screenshot({ path: `${OUT}/${label}-profil.png` });
+    checkProfile();
+    await profile.close();
 
     // --- Nastavení ---
     const settings = await context.newPage();

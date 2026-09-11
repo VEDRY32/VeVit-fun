@@ -11,7 +11,11 @@ import {
 } from '@vevit-games/ui';
 import { bySlug, catalog } from '../lib/catalog.js';
 import { createScoreApi, fetchLeaderboard, EMPTY_LEADERBOARD, type LeaderboardData } from '../lib/api.js';
-import { recordPlayed, type PortalSettings } from '../lib/settings.js';
+import {
+  recordPlayed, loadFavorites, loadPlays, savePlays, type PortalSettings,
+} from '../lib/settings.js';
+import { completeChallenge, currentStreak } from '../lib/daily.js';
+import { evaluateBadges, EMPTY_STATS, type Badge } from '../lib/badges.js';
 import { navigate } from '../lib/router.js';
 import type { I18n } from '../lib/i18n.js';
 
@@ -51,6 +55,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   const [myEntry] = useState<LeaderboardEntry | null>(null);
   const [usedActions, setUsedActions] = useState<ReadonlySet<Action>>(new Set());
   const [needsRotate, setNeedsRotate] = useState(false);
+  const [freshBadges, setFreshBadges] = useState<Badge[]>([]);
+
+  // Počty odehraných partií drží profil i odznaky; ukládají se lokálně.
+  const playsRef = useRef<Record<string, number>>(loadPlays());
 
   const audio = useMemo(() => createAudioBus({
     master: settings.master, music: settings.music, sfx: settings.sfx, muted: settings.muted,
@@ -127,6 +135,39 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
       ? { runId: null, seed: dailySeed(entry.manifest.slug, pragueToday()) }
       : await scores.start(mode);
 
+    /**
+     * Po dohrané partii se zapíše denní výzva, přepočítají odznaky
+     * a nové se ukážou hráči. Statistiky se berou z lokálního úložiště,
+     * takže to funguje i bez přihlášení.
+     */
+    const recordOutcome = (score: number): void => {
+      if (mode === 'denni') completeChallenge(entry.manifest.slug, score);
+
+      const plays = { ...playsRef.current };
+      plays[entry.manifest.slug] = (plays[entry.manifest.slug] ?? 0) + 1;
+      playsRef.current = plays;
+      savePlays(plays);
+
+      const bestByGame = { ...EMPTY_STATS.best };
+      for (const catalogEntry of catalog) {
+        const slug = catalogEntry.manifest.slug;
+        const localBest = createStorage({
+          gameSlug: slug,
+          version: catalogEntry.manifest.rulesVersion,
+        }).getBest(catalogEntry.manifest.modes[0]?.id ?? 'klasik');
+        if (localBest != null) bestByGame[slug] = localBest;
+      }
+
+      const earned = evaluateBadges({
+        plays,
+        best: bestByGame,
+        streak: currentStreak(),
+        dailyDone: Object.keys(plays).length,
+        favorites: loadFavorites().length,
+      });
+      if (earned.length > 0) setFreshBadges(earned);
+    };
+
     const onEvent = (event: GameEvent): void => {
       switch (event.type) {
         case 'started':
@@ -141,10 +182,12 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
         case 'gameover':
           setResult({ score: event.score, won: false, stats: event.stats });
           setPhase('finished');
+          recordOutcome(event.score);
           break;
         case 'win':
           setResult({ score: event.score, won: true, stats: event.stats });
           setPhase('finished');
+          recordOutcome(event.score);
           break;
         case 'error':
           setPhase('error');
@@ -387,6 +430,17 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
         onSettings={() => navigate(`/${i18n.locale}/nastaveni`)}
         onLeave={() => navigate(`/${i18n.locale}/`)}
       />
+
+      {freshBadges.length > 0 && (
+        <div className="odznak-toast" role="status" aria-live="polite">
+          {freshBadges.map((badge) => (
+            <p key={badge.id}>
+              <strong>Nový odznak:</strong> {badge.title}
+            </p>
+          ))}
+          <button type="button" onClick={() => setFreshBadges([])}>Zavřít</button>
+        </div>
+      )}
 
       <ResultScreen
         open={phase === 'finished' && result != null}
