@@ -17,7 +17,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "composite": true,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": {
+      "@vevit-games/engine": ["packages/engine/src/index.ts"],
+      "@vevit-games/rules": ["packages/rules/src/index.ts"],
+      "@vevit-games/ui": ["packages/ui/src/index.ts"],
+      "@vevit-games/net": ["packages/net/src/index.ts"]
+    }
   }
 }

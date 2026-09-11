@@ -1,5 +1,5 @@
 {
-  "name": "@vevit-games/engine",
+  "name": "@vevit-games/rules",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,5 +11,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@vevit-games/engine": "workspace:*"
   }
 }
