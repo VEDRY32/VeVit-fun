@@ -14,3 +14,6 @@ export * from './hledac-min/game.js';
 export * from './petipismenka/evaluate.js';
 export * from './pasiansy/cards.js';
 export * from './pasiansy/game.js';
+export * from './mavnik/game.js';
+export * from './pexeso/game.js';
+export * from './ctyri-v-rade/game.js';

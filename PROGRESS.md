@@ -117,3 +117,55 @@ PWA/offline, odznaky, admin a tvrdé QA. Plán a pořadí jsou v PLAN.md.
   `POST /api/daily/prepare`; cron ve workeru zatím neběží.
 - **Realtime server** zatím neexistuje, `/api/rt-ticket` vydává tickety
   „do prázdna".
+
+---
+
+## F2 — Ostatní singleplayer 🟡 rozpracováno
+
+### Hotovo
+
+**Mávník** (arkády) — jedno tlačítko, gravitace a mezery mezi stožáry.
+Celá logika ve fixed-point, protože hra má denní seed i hodnocený žebříček.
+Drak nespadne, dokud hráč poprvé nemávne; mezera se s rostoucím skóre zužuje
+ke stropu 120 px. Medaile za 10, 25 a 50 bodů. Paralaxa siluet města.
+
+**Pexeso** (multiplayer a deskovky) — mřížky 4×4 až 8×8, čtyři sady motivů,
+vlastní vektorové ilustrace kreslené procedurálně. Model počítá s víc hráči,
+takže stejná pravidla obsluhují hru na čas, dva hráče u jednoho zařízení
+i budoucí online partii. Kliknutí během prohlížení neshodné dvojice ji hned
+zavře, aby hráč nemusel čekat na odpočet.
+
+**Čtyři v řadě** (multiplayer a deskovky) — minimax s alfa-beta ořezáváním
+ve třech obtížnostech (hloubka 2, 5 a 7). Lehká občas zahraje náhodně, ale
+nikdy nezahodí okamžitou výhru ani nepřehlédne okamžitou prohru. AI přemýšlí
+mimo krok logiky, aby se hra viditelně nezasekla. Animace pádu žetonu,
+krok zpět vrací proti počítači oba tahy.
+
+### Ověřeno
+
+| Kontrola | Výsledek |
+|---|---|
+| Unit testy | 278 celkem (nově 60: Mávník 12, Pexeso 15, Čtyři v řadě 21, ostatní) |
+| Initial JS portálu | 12,8 kB + React 45,7 kB gzip (limit 130) |
+| Největší chunk hry | 21,3 kB gzip (limit 250) |
+| Kouřový test | 9 her, desktop i mobil |
+
+### Chyby nalezené a opravené
+
+8. Vzor „plné desky bez čtveřice" v testu remízy čtveřici obsahoval.
+   Nahrazen vzorem se třemi žetony na sloupec a obráceným pořadím
+   v sousedních sloupcích.
+9. Test blokování v AI byl nejednoznačný — pozice dávala AI vlastní výhru
+   na stejném sloupci, takže neprokazoval blokování.
+10. `COLS`, `ROWS` a `Cell` kolidovaly v barrelu `@vevit-games/rules`
+    mezi Kostkopádem a Čtyřmi v řadě.
+
+### Zbývá z F2
+
+Kategorie A: Malované křížovky, Spojovačka, Skladník, Balónky, Osmisměrka, Sudoku.
+Kategorie B: Mahjong páskování.
+Kategorie C: Hladovec, Invaze, Planetky, Cihlobijec, Přes silnici, Běžec,
+Skokan, Obrana města, Trojky, Bublinář, Rytmoskok.
+Kategorie D: Rvačka, Válka panáčků, Panáčci: aréna, Ježčí dělostřelci,
+Obrana věže, Buchtárna.
+Dále: denní výzvy v UI, odznaky, PWA a offline režim.

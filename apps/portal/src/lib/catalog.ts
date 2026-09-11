@@ -13,6 +13,9 @@ import { manifest as had } from '@titles/had/src/manifest.js';
 import { manifest as hledacMin } from '@titles/hledac-min/src/manifest.js';
 import { manifest as petipismenka } from '@titles/petipismenka/src/manifest.js';
 import { manifest as pasiansy } from '@titles/pasiansy/src/manifest.js';
+import { manifest as mavnik } from '@titles/mavnik/src/manifest.js';
+import { manifest as pexeso } from '@titles/pexeso/src/manifest.js';
+import { manifest as ctyriVRade } from '@titles/ctyri-v-rade/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -26,6 +29,9 @@ export const catalog: CatalogEntry[] = [
   { manifest: had, load: () => import('@titles/had/src/index.js') as Promise<GameModule> },
   { manifest: hledacMin, load: () => import('@titles/hledac-min/src/index.js') as Promise<GameModule> },
   { manifest: pasiansy, load: () => import('@titles/pasiansy/src/index.js') as Promise<GameModule> },
+  { manifest: mavnik, load: () => import('@titles/mavnik/src/index.js') as Promise<GameModule> },
+  { manifest: pexeso, load: () => import('@titles/pexeso/src/index.js') as Promise<GameModule> },
+  { manifest: ctyriVRade, load: () => import('@titles/ctyri-v-rade/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>

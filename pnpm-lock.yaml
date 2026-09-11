@@ -100,6 +100,15 @@ importers:
         specifier: ^18.3.1
         version: 18.3.7(@types/react@18.3.31)
 
+  titles/ctyri-v-rade:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   titles/had:
     dependencies:
       '@vevit-games/engine':
@@ -127,6 +136,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/rules
 
+  titles/mavnik:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   titles/pasiansy:
     dependencies:
       '@vevit-games/engine':
@@ -137,6 +155,15 @@ importers:
         version: link:../../packages/rules
 
   titles/petipismenka:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
+  titles/pexeso:
     dependencies:
       '@vevit-games/engine':
         specifier: workspace:*

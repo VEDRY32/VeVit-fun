@@ -22,6 +22,7 @@ export const BIT = {
   l: bitOf('l'),
   r: bitOf('r'),
   start: bitOf('start'),
+  pointer: bitOf('pointer'),
 } as const;
 
 /** Hrana stisku: akce je držená teď a nebyla v předchozím kroku. */
