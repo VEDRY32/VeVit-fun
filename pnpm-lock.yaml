@@ -226,6 +226,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/rules
 
+  titles/sudoku:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   titles/zdvojka:
     dependencies:
       '@vevit-games/engine':
