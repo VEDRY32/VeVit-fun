@@ -15,7 +15,7 @@ const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173';
 const OUT = process.env.SHOT_DIR ?? resolve(process.cwd(), 'screenshots');
 const GAMES = [
   'kostkopad', 'petipismenka', 'zdvojka', 'had', 'hledac-min', 'pasiansy',
-  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec',
+  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec', 'piskvorky', 'odpal',
 ];
 
 const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX', 'KeyZ', 'KeyC'];
@@ -131,10 +131,30 @@ async function run() {
       // Herní plocha se už jednou smrskla na dva pixely kvůli CSS (položka
       // mřížky s auto marginem a absolutně pozicovaným obsahem). Plátno
       // přitom existovalo, takže to samotná kontrola výše nechytila.
+      //
+      // Kontrolujeme šířku a poměr stran proti manifestu, ne pevnou výšku:
+      // Běžec je 640×240, takže na mobilu vyjde nízký úplně správně.
       const box = await page.locator('.hra__plocha').boundingBox();
-      if (!box || box.width < 200 || box.height < 200) {
+      const declared = await page.locator('.hra__plocha').evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          w: Number(style.getPropertyValue('--pomer-w')),
+          h: Number(style.getPropertyValue('--pomer-h')),
+        };
+      });
+
+      if (!box || box.width < 200 || box.height < 80) {
         failures++;
         console.error(`✗ ${label} · ${slug}: herní plocha má nesmyslnou velikost ${JSON.stringify(box)}`);
+      } else if (declared.w > 0 && declared.h > 0) {
+        const want = declared.w / declared.h;
+        const got = box.width / box.height;
+        if (Math.abs(want - got) / want > 0.04) {
+          failures++;
+          console.error(
+            `✗ ${label} · ${slug}: poměr stran ${got.toFixed(2)} neodpovídá manifestu ${want.toFixed(2)}`,
+          );
+        }
       }
 
       await page.mouse.click(700, 400);

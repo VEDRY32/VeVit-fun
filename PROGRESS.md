@@ -169,3 +169,48 @@ Skokan, Obrana města, Trojky, Bublinář, Rytmoskok.
 Kategorie D: Rvačka, Válka panáčků, Panáčci: aréna, Ježčí dělostřelci,
 Obrana věže, Buchtárna.
 Dále: denní výzvy v UI, odznaky, PWA a offline režim.
+
+### F2 — druhá dávka
+
+**Cihlobijec** — spojitá kolize (swept test) místo kontroly překryvu po kroku;
+rychlý míček by jinak cihlou prolétl. Míček, který krok začne uvnitř cihly,
+se vytlačí po ose s nejmenším průnikem. Šest vylepšení, tři úrovně, laser.
+
+**Invaze** — formace zrychluje, jak nepřátel ubývá; kryty jsou bitmapové masky,
+do kterých střela vykousne díru. Tři typy nepřátel rozlišené tvarem.
+
+**Hladovec** — čtyři pronásledovatelé s odlišnou povahou, volba směru přes
+vzdálenostní mapu z enginu. Dvě vlastní bludiště, obě ověřená na dosažitelnost
+všech polí.
+
+**Běžec** — skok jde dávkovat držením, přikrčení ve vzduchu urychlí pád.
+Zároveň slouží jako offline stránka portálu.
+
+**Piškvorky** — neomezená plocha, AI hledá hrozby místo minimaxu. Čtverečkovaný
+papír s ručně působícím, ale deterministickým rozkmitáním tahů.
+
+**Odpal** — dva i čtyři hráči, tři obtížnosti AI. Chyba v odhadu se drží po
+celou výměnu, ne po jednotlivých krocích.
+
+**PWA a offline** — service worker se třemi strategiemi podle druhu požadavku,
+offline stránka je hratelný Běžec jako samostatný vstupní bod.
+
+**Denní výzvy a odznaky** — tři hry denně vybrané z čísla dne, série dní,
+17 odznaků vyhodnocovaných čistou funkcí nad statistikami.
+
+### Další chyby nalezené a opravené
+
+11. Vzor „plné desky bez čtveřice" v testu remízy Čtyř v řadě čtveřici
+    obsahoval; test blokování navíc dával AI vlastní výhru na stejném sloupci.
+12. `COLS`, `ROWS`, `Cell`, později `FIELD_W`/`FIELD_H` kolidovaly v barrelu
+    `@vevit-games/rules` → rozděleno na vstupy podle her (D-013).
+13. Hladovec: hráč začínal na pevných souřadnicích, které v prvním bludišti
+    padly do zdi; druhé bludiště mělo 21 nedostupných polí.
+14. Piškvorky: AI upřednostnila blok před vlastní výhrou, protože váha obrany
+    přebila dokončení pětice.
+15. Odpal: AI losovala chybu v odhadu každý krok, takže se průměrovala k nule
+    a i „lehká" obtížnost byla neprůstřelná.
+16. Zdvojka počítala mřížku jen ze šířky → poslední řádek mimo plátno.
+17. Kontrola velikosti herní plochy v kouřovém testu porovnávala pevnou výšku,
+    takže označila správně vykreslený Běžec (640×240) za chybu; teď porovnává
+    poměr stran proti manifestu.

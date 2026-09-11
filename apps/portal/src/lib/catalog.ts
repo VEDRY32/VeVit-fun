@@ -20,6 +20,8 @@ import { manifest as cihlobijec } from '@titles/cihlobijec/src/manifest.js';
 import { manifest as invaze } from '@titles/invaze/src/manifest.js';
 import { manifest as hladovec } from '@titles/hladovec/src/manifest.js';
 import { manifest as bezec } from '@titles/bezec/src/manifest.js';
+import { manifest as piskvorky } from '@titles/piskvorky/src/manifest.js';
+import { manifest as odpal } from '@titles/odpal/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -40,6 +42,8 @@ export const catalog: CatalogEntry[] = [
   { manifest: invaze, load: () => import('@titles/invaze/src/index.js') as Promise<GameModule> },
   { manifest: hladovec, load: () => import('@titles/hladovec/src/index.js') as Promise<GameModule> },
   { manifest: bezec, load: () => import('@titles/bezec/src/index.js') as Promise<GameModule> },
+  { manifest: piskvorky, load: () => import('@titles/piskvorky/src/index.js') as Promise<GameModule> },
+  { manifest: odpal, load: () => import('@titles/odpal/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>

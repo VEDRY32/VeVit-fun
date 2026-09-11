@@ -181,6 +181,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/rules
 
+  titles/odpal:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   titles/pasiansy:
     dependencies:
       '@vevit-games/engine':
@@ -200,6 +209,15 @@ importers:
         version: link:../../packages/rules
 
   titles/pexeso:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
+  titles/piskvorky:
     dependencies:
       '@vevit-games/engine':
         specifier: workspace:*
