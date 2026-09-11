@@ -176,3 +176,30 @@ společné — `input-bits` a `validate`.
 
 **Poznámka.** `CTYRI_COLS`/`CTYRI_ROWS` z Čtyř v řadě zůstávají s předponou;
 přejmenování zpátky by teď měnilo API bez užitku.
+
+---
+
+## D-014 — Determinismus hlídá skript, ne ESLint pravidlo
+
+**Kontext.** Zadání (sekce 4) žádá ESLint pravidlo, které v herní logice
+zakáže `Math.random` a `Date.now`.
+
+**Rozhodnutí.** Stejnou práci dělá `scripts/check-determinism.mjs`, který běží
+v `pnpm check` před každým buildem.
+
+**Zdůvodnění.**
+1. Vlastní ESLint pravidlo by znamenalo plugin, jeho build a konfiguraci
+   flat configu — víc pohyblivých částí než samotná kontrola.
+2. Skript rozlišuje **logiku od vykreslování**: `performance.now` je
+   v rendereru v pořádku (animace nejsou logika), ale `Math.random` není
+   nikde, protože by rozbil i reprodukovatelnost attract ukázek a screenshotů.
+   Tohle rozlišení se v ESLintu vyjadřuje hůř než deseti řádky kódu.
+3. Výjimky jsou v jednom seznamu **s důvodem**; `eslint-disable` komentáře
+   po repu se hůř kontrolují.
+
+**Důsledky.** Editor porušení nezvýrazní za běhu — projeví se až při
+`pnpm check`. Kdyby to začalo vadit, pravidlo jde doplnit později; skript
+zůstane jako záchranná síť v CI.
+
+**Co skript odhalil hned při zavedení:** Pasiánsy si při stisku ukládaly
+`performance.now()` do pole, které se nikdy nečetlo.

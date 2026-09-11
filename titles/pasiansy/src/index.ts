@@ -229,7 +229,9 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
   // --- Ukazatel --------------------------------------------------------------
 
-  let pressedAt: { x: number; y: number; time: number; hit: { pileId: string; index: number } } | null = null;
+  // Rozlišení tapnutí od tažení se dělá vzdáleností, ne časem — herní
+  // logika nesmí sahat na reálný čas (kontroluje scripts/check-determinism.mjs).
+  let pressedAt: { x: number; y: number; hit: { pileId: string; index: number } } | null = null;
 
   const onPointerDown = (e: PointerEvent): void => {
     if (game.state.won) return;
@@ -243,7 +245,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     }
     if (hit.index < 0) return;
 
-    pressedAt = { x: local.x, y: local.y, time: performance.now(), hit };
+    pressedAt = { x: local.x, y: local.y, hit };
   };
 
   const onPointerMove = (e: PointerEvent): void => {
