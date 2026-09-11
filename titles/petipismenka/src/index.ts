@@ -15,7 +15,7 @@ import {
   evaluateGuess, mergeKeyboardState, checkHardMode, shareGrid,
   normalizeWord, WORD_LENGTH, MAX_GUESSES, RESULT_GLYPHS,
   type LetterResult,
-} from '@vevit-games/rules';
+} from '@vevit-games/rules/petipismenka';
 import { manifest } from './manifest.js';
 import { ANSWERS, ALLOWED, answerForDay } from './data/words-cs.js';
 

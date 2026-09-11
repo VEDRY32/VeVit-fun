@@ -5,7 +5,7 @@ import {
   withAlpha, easing, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createZdvojka, type ZdvojkaMode, type Direction } from '@vevit-games/rules';
+import { createZdvojka, type ZdvojkaMode, type Direction } from '@vevit-games/rules/zdvojka';
 import { manifest } from './manifest.js';
 
 const VIEW_W = 480;

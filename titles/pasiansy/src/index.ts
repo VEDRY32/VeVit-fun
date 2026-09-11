@@ -9,7 +9,7 @@ import {
   createLoop, createSurface, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule,
 } from '@vevit-games/engine';
-import { createPasiansy, type Variant, type Card } from '@vevit-games/rules';
+import { createPasiansy, type Variant, type Card } from '@vevit-games/rules/pasiansy';
 import { manifest } from './manifest.js';
 import {
   VIEW_W, VIEW_H, CARD_W, CARD_H, drawCard, drawSlot, layoutFor, cardOffsetY,

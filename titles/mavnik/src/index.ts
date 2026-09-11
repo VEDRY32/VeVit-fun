@@ -4,7 +4,7 @@ import {
   createLoop, createSurface, createReplayRecorder, roundRect, centerText, withAlpha, shade,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createMavnik, WORLD_W, WORLD_H, BIRD_X, type MavnikMode } from '@vevit-games/rules';
+import { createMavnik, WORLD_W, WORLD_H, BIRD_X, type MavnikMode } from '@vevit-games/rules/mavnik';
 import { toFloat } from '@vevit-games/engine';
 import { manifest } from './manifest.js';
 

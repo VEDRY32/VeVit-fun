@@ -10,7 +10,7 @@ import {
   createLoop, createSurface, centerText, withAlpha, shade, easing, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createCtyriVRade, CTYRI_COLS, CTYRI_ROWS, type Difficulty } from '@vevit-games/rules';
+import { createCtyriVRade, CTYRI_COLS, CTYRI_ROWS, type Difficulty } from '@vevit-games/rules/ctyri-v-rade';
 import { manifest } from './manifest.js';
 
 const VIEW = 620;

@@ -153,3 +153,26 @@ ani v komentářích. Slugy jsou bezdiakritické ASCII varianty českých názv�
 
 **Vynuceno.** `scripts/check-ip.mjs` v CI prochází repo na seznam zakázaných
 řetězců a selže při nálezu.
+
+---
+
+## D-013 — Pravidla her mají vlastní vstupní body, ne společný barrel
+
+**Kontext.** `@vevit-games/rules` původně re-exportoval všechny hry z jednoho
+`index.ts`. Při třetí a páté přidané hře se srazily názvy: `COLS`/`ROWS`/`Cell`
+mezi Kostkopádem a Čtyřmi v řadě, pak `FIELD_W`/`FIELD_H` mezi Cihlobijcem
+a Invazí. Katalog má mít 57 her, takže další kolize byly jistota.
+
+**Rozhodnutí.** Každá hra má `packages/rules/src/<slug>/index.ts` a importuje
+se jako `@vevit-games/rules/<slug>`. Hlavní barrel drží jen to, co je opravdu
+společné — `input-bits` a `validate`.
+
+**Důsledky.**
+- Hry můžou pojmenovat konstanty přirozeně (`FIELD_W`, `COLS`) bez předpon.
+- Import napoví, odkud pravidla pocházejí: `from '@vevit-games/rules/invaze'`.
+- Bundler nemusí z barrelu nic ořezávat — titul si stáhne jen svou hru.
+- Cena: přibyl jeden soubor na hru a wildcard v `exports`, `paths` i aliasech
+  Vite a Vitest.
+
+**Poznámka.** `CTYRI_COLS`/`CTYRI_ROWS` z Čtyř v řadě zůstávají s předponou;
+přejmenování zpátky by teď měnilo API bez užitku.

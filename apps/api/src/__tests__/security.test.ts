@@ -10,7 +10,8 @@ import { createMemoryStore, type Store } from '../db/store.js';
 import { hashToken, issueRealtimeTicket, verifyRealtimeTicket, verifySignature, sign } from '../auth/session.js';
 import { validateNickname, containsProfanity, guestNickname } from '../nickname.js';
 import { createRng, createReplayRecorder } from '@vevit-games/engine/core';
-import { createKostkopad, KOSTKOPAD_RULES_VERSION, BIT } from '@vevit-games/rules';
+import { BIT } from '@vevit-games/rules';
+import { createKostkopad, KOSTKOPAD_RULES_VERSION } from '@vevit-games/rules/kostkopad';
 import { config } from '../config.js';
 
 /** Vytvoří store s jedním přihlášeným hráčem a vrátí jeho cookie. */

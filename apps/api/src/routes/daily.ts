@@ -6,7 +6,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
-import { evaluateGuess, MAX_GUESSES, WORD_LENGTH } from '@vevit-games/rules';
+import { evaluateGuess, MAX_GUESSES, WORD_LENGTH } from '@vevit-games/rules/petipismenka';
 import { createRng } from '@vevit-games/engine/core';
 import type { Store } from '../db/store.js';
 import { config } from '../config.js';

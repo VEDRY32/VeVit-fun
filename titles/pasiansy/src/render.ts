@@ -4,7 +4,7 @@ import { roundRect, withAlpha, centerText } from '@vevit-games/engine';
 import {
   SUIT_SYMBOLS, RANK_LABELS, isRed,
   type Card, type Pile,
-} from '@vevit-games/rules';
+} from '@vevit-games/rules/pasiansy';
 
 export const VIEW_W = 900;
 export const VIEW_H = 640;

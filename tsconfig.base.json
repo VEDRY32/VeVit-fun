@@ -23,6 +23,7 @@
       "@vevit-games/engine/core": ["packages/engine/src/core.ts"],
       "@vevit-games/engine": ["packages/engine/src/index.ts"],
       "@vevit-games/rules": ["packages/rules/src/index.ts"],
+      "@vevit-games/rules/*": ["packages/rules/src/*/index.ts"],
       "@vevit-games/ui": ["packages/ui/src/index.ts"],
       "@vevit-games/net": ["packages/net/src/index.ts"],
       "@titles/*": ["titles/*"]

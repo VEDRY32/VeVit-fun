@@ -4,7 +4,7 @@ import {
   createLoop, createSurface, roundRect, centerText, withAlpha, shade,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createHledacMin, DIFFICULTIES, type HledacConfig } from '@vevit-games/rules';
+import { createHledacMin, DIFFICULTIES, type HledacConfig } from '@vevit-games/rules/hledac-min';
 import { manifest } from './manifest.js';
 
 const VIEW_W = 620;

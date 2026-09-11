@@ -4,7 +4,7 @@ import {
   createLoop, createSurface, roundRect, centerText, withAlpha, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createPexeso, MOTIFS, type MotifSet, type PexesoConfig } from '@vevit-games/rules';
+import { createPexeso, MOTIFS, type MotifSet, type PexesoConfig } from '@vevit-games/rules/pexeso';
 import { manifest } from './manifest.js';
 import { drawMotif } from './motifs.js';
 

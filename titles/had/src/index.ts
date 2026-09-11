@@ -4,7 +4,7 @@ import {
   createLoop, createSurface, createReplayRecorder, withAlpha, centerText,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createHad, type HadMode, type Dir } from '@vevit-games/rules';
+import { createHad, type HadMode, type Dir } from '@vevit-games/rules/had';
 import { manifest } from './manifest.js';
 
 const VIEW = 600;

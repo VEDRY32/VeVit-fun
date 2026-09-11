@@ -9,7 +9,7 @@ import {
   createLoop, createSurface, createParticles, createRng, createReplayRecorder,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createKostkopad, PIECE_COLORS, type KostkopadMode } from '@vevit-games/rules';
+import { createKostkopad, PIECE_COLORS, type KostkopadMode } from '@vevit-games/rules/kostkopad';
 import { manifest } from './manifest.js';
 import {
   renderKostkopad, renderAttract, VIEW_WIDTH, VIEW_HEIGHT,

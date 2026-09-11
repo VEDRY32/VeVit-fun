@@ -4,7 +4,7 @@ import { glassTile, roundRect, withAlpha, centerText, shade, type ParticleSystem
 import {
   COLS, VISIBLE_ROWS, HIDDEN_ROWS, PIECE_COLORS, PIECE_GLYPHS, PIECE_SHAPES,
   type KostkopadGame, type PieceType,
-} from '@vevit-games/rules';
+} from '@vevit-games/rules/kostkopad';
 
 export const VIEW_WIDTH = 640;
 export const VIEW_HEIGHT = 720;
