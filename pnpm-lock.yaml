@@ -127,6 +127,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/rules
 
+  titles/hladovec:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   titles/hledac-min:
     dependencies:
       '@vevit-games/engine':
