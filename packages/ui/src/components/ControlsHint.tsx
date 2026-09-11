@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { Action } from '@vevit-games/engine';
 
 export interface ControlHintItem {
@@ -12,19 +13,39 @@ export interface ControlsHintProps {
   /** Akce, které už hráč vyzkoušel — zmizí z nápovědy. */
   used: ReadonlySet<Action>;
   visible: boolean;
+  /**
+   * Kde nápověda leží. Výchozí je vlevo dole; hry, které tam mají
+   * ovládací prvky (číselník, tlačítka), si zvolí jiný roh.
+   */
+  anchor?: 'vlevo-dole' | 'vlevo-nahore' | 'vpravo-dole' | 'vpravo-nahore';
+  /** Po kolika sekundách nápověda zmizí sama. */
+  timeoutSeconds?: number;
 }
 
 /**
  * Interaktivní nápověda ovládání při prvním spuštění.
- * Každý řádek zmizí, jakmile hráč danou akci poprvé použije, takže nápověda
- * sama od sebe dojde a nemusí se zavírat.
+ *
+ * Řádek zmizí, jakmile hráč danou akci poprvé použije. Navíc má časový
+ * strop: hry, jejichž ovládání je myší nebo tapem, by jinak nápovědu
+ * nikdy neodbavily a ta by trvale překrývala část plochy — přesně to se
+ * stalo Sudoku, kde zakrývala číselník.
  */
-export function ControlsHint({ items, used, visible }: ControlsHintProps): JSX.Element | null {
+export function ControlsHint({
+  items, used, visible, anchor = 'vlevo-dole', timeoutSeconds = 12,
+}: ControlsHintProps): JSX.Element | null {
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    if (!visible || timeoutSeconds <= 0) return;
+    const timer = window.setTimeout(() => setExpired(true), timeoutSeconds * 1000);
+    return () => window.clearTimeout(timer);
+  }, [visible, timeoutSeconds]);
+
   const remaining = items.filter((item) => !used.has(item.action));
-  if (!visible || remaining.length === 0) return null;
+  if (!visible || expired || remaining.length === 0) return null;
 
   return (
-    <div className="napoveda" aria-live="polite">
+    <div className={`napoveda napoveda--${anchor}`} aria-live="polite">
       <ul className="napoveda__seznam">
         {remaining.map((item) => (
           <li key={item.action}>

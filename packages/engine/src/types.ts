@@ -186,6 +186,11 @@ export interface GameModule {
   touchButtons?: TouchButtonSpec[];
   /** Nápověda ovládání při prvním spuštění. */
   controlHints?: ControlHintSpec[];
+  /**
+   * Roh, ve kterém nápověda ovládání leží. Hry s ovládacími prvky vlevo
+   * dole (číselník, tlačítka) si zvolí jiný, aby je nezakrývala.
+   */
+  hintAnchor?: 'vlevo-dole' | 'vlevo-nahore' | 'vpravo-dole' | 'vpravo-nahore';
   mount(el: HTMLElement, ctx: GameContext): GameInstance;
   /** Samohrající ukázka pro hero a dlaždice. `t` je čas v sekundách. */
   renderAttract(canvas: HTMLCanvasElement, t: number): void;

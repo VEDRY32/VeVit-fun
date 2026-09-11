@@ -608,10 +608,28 @@
 
 .napoveda {
   position: absolute;
-  left: var(--s-md);
-  bottom: var(--s-md);
   pointer-events: none;
   max-width: calc(100% - var(--s-xl));
+}
+
+.napoveda--vlevo-dole {
+  left: var(--s-md);
+  bottom: var(--s-md);
+}
+
+.napoveda--vlevo-nahore {
+  left: var(--s-md);
+  top: var(--s-md);
+}
+
+.napoveda--vpravo-dole {
+  right: var(--s-md);
+  bottom: var(--s-md);
+}
+
+.napoveda--vpravo-nahore {
+  right: var(--s-md);
+  top: var(--s-md);
 }
 
 .napoveda__seznam {

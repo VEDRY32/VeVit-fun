@@ -446,4 +446,9 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   };
 }
 
-export const module_: GameModule = { manifest, mount, renderAttract, keymap, controlHints };
+/** Číselník leží dole, takže nápověda musí jinam. */
+export const hintAnchor = 'vpravo-nahore' as const;
+
+export const module_: GameModule = {
+  manifest, mount, renderAttract, keymap, controlHints, hintAnchor,
+};

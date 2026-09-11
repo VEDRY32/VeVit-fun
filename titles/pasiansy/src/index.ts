@@ -385,4 +385,9 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   };
 }
 
-export const module_: GameModule = { manifest, mount, renderAttract, keymap, controlHints };
+/** Dole je stavový řádek a spodní řada sloupců. */
+export const hintAnchor = 'vpravo-nahore' as const;
+
+export const module_: GameModule = {
+  manifest, mount, renderAttract, keymap, controlHints, hintAnchor,
+};

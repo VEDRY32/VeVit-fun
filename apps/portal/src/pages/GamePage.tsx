@@ -348,6 +348,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
             <ControlsHint
               visible={phase === 'playing'}
               used={usedActions}
+              anchor={moduleRef.current.hintAnchor}
               items={moduleRef.current.controlHints.map((hint) => ({
                 action: hint.action as Action,
                 label: hint.label,
