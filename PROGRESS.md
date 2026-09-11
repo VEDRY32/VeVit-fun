@@ -214,3 +214,26 @@ offline stránka je hratelný Běžec jako samostatný vstupní bod.
 17. Kontrola velikosti herní plochy v kouřovém testu porovnávala pevnou výšku,
     takže označila správně vykreslený Běžec (640×240) za chybu; teď porovnává
     poměr stran proti manifestu.
+
+### F2 — třetí dávka
+
+**Sudoku** — generátor se symetrickým odebíráním a zárukou jednoznačného
+řešení, obtížnost podle nejtěžší nutné techniky. Poznámky tužkou, undo/redo,
+nápověda, která vysvětlí použitou techniku a nejdřív opraví špatně zapsané
+číslo.
+
+18. `countSudoku`/`countSolutions` nekontrolovala rozpor mezi už vyplněnými
+    buňkami — `isValidPlacement` se ptá jen na prázdné, takže řešič
+    prohledával celý strom, než došel k nule, a test s rozporuplným
+    zadáním neskončil.
+19. Ukázka Hada se v hero pruhu 960×540 kreslila na mřížce 12×8, takže
+    z hada byl nečitelný zelený válec; mřížka je teď 24×14.
+
+### Stav katalogu
+
+Hotovo 16 z 57 her:
+Kostkopád, Pětipísmenka, Zdvojka, Hledač min, Sudoku, Pasiánsy (3 varianty),
+Had, Hladovec, Invaze, Cihlobijec, Mávník, Běžec, Pexeso, Čtyři v řadě,
+Piškvorky, Odpal.
+
+Zbývá 29 klonů z katalogu a všech 12 originálů VeVit.

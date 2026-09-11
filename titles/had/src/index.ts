@@ -103,27 +103,46 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   c.fillStyle = '#0F1C3F';
   c.fillRect(0, 0, width, height);
 
-  const cols = 12;
-  const cell = Math.min(width / cols, height / 8);
+  /**
+   * Mřížka je záměrně hustá: ukázka se kreslí i do hero pruhu 960×540
+   * a při málo velkých políčkách by z hada byl nečitelný zelený válec.
+   */
+  const cols = 24;
+  const rows = 14;
+  const cell = Math.min(width / cols, height / rows);
   const offsetX = (width - cols * cell) / 2;
-  const offsetY = (height - 8 * cell) / 2;
+  const offsetY = (height - rows * cell) / 2;
 
   c.save();
   c.translate(offsetX, offsetY);
 
+  // Jemná mřížka, ať je vidět, že se hraje na políčkách.
+  c.strokeStyle = 'rgba(238,242,255,0.05)';
+  c.lineWidth = 1;
+  c.beginPath();
+  for (let x = 0; x <= cols; x++) {
+    c.moveTo(x * cell, 0);
+    c.lineTo(x * cell, rows * cell);
+  }
+  for (let y = 0; y <= rows; y++) {
+    c.moveTo(0, y * cell);
+    c.lineTo(cols * cell, y * cell);
+  }
+  c.stroke();
+
   // Had krouží po obvodu — jednoduchá, ale čitelná ukázka.
   const perimeter: { x: number; y: number }[] = [];
-  for (let x = 1; x < cols - 1; x++) perimeter.push({ x, y: 1 });
-  for (let y = 1; y < 7; y++) perimeter.push({ x: cols - 2, y });
-  for (let x = cols - 2; x > 0; x--) perimeter.push({ x, y: 6 });
-  for (let y = 6; y > 0; y--) perimeter.push({ x: 1, y });
+  for (let x = 2; x < cols - 2; x++) perimeter.push({ x, y: 2 });
+  for (let y = 2; y < rows - 2; y++) perimeter.push({ x: cols - 3, y });
+  for (let x = cols - 3; x > 1; x--) perimeter.push({ x, y: rows - 3 });
+  for (let y = rows - 3; y > 1; y--) perimeter.push({ x: 2, y });
 
-  const head = Math.floor(t * 6) % perimeter.length;
-  const body = Array.from({ length: 9 }, (_, i) =>
+  const head = Math.floor(t * 9) % perimeter.length;
+  const body = Array.from({ length: 14 }, (_, i) =>
     perimeter[(head - i + perimeter.length * 2) % perimeter.length]!,
   );
 
-  const food = perimeter[(head + 14) % perimeter.length]!;
+  const food = perimeter[(head + 20) % perimeter.length]!;
   c.fillStyle = '#FFB224';
   c.beginPath();
   c.arc((food.x + 0.5) * cell, (food.y + 0.5) * cell, cell * 0.28, 0, Math.PI * 2);
