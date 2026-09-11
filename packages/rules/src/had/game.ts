@@ -5,7 +5,7 @@
  * neztratilo druhý tah, když první ještě nestihl proběhnout.
  */
 
-import { createRng, type Rng } from '@vevit-games/engine';
+import { createRng, type Rng } from '@vevit-games/engine/core';
 import { BIT, justPressed } from '../input-bits.js';
 
 export const HAD_RULES_VERSION = 1;

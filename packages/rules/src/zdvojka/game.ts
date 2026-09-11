@@ -5,7 +5,7 @@
  * hráčům stejnou hru a server umí běh přehrát.
  */
 
-import { createRng, type Rng } from '@vevit-games/engine';
+import { createRng, type Rng } from '@vevit-games/engine/core';
 import { BIT, justPressed } from '../input-bits.js';
 
 export const ZDVOJKA_RULES_VERSION = 1;

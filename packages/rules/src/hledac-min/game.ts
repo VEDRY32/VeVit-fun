@@ -6,7 +6,7 @@
  * dohrát čistou logikou, takže hráč nikdy nemusí tipovat.
  */
 
-import { createRng, type Rng } from '@vevit-games/engine';
+import { createRng, type Rng } from '@vevit-games/engine/core';
 
 export const HLEDAC_RULES_VERSION = 1;
 

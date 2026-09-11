@@ -7,7 +7,7 @@
  * jedním `fetch`em.
  */
 
-import { parseReplay, type Replay } from '@vevit-games/engine';
+import { parseReplay, type Replay } from '@vevit-games/engine/core';
 import { createKostkopad, type KostkopadMode } from './kostkopad/game.js';
 import { KOSTKOPAD_RULES_VERSION } from './kostkopad/scoring.js';
 

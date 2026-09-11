@@ -6,7 +6,7 @@
  * verze replaye.
  */
 
-import { ACTIONS, type Action } from '@vevit-games/engine';
+import { ACTIONS, type Action } from '@vevit-games/engine/core';
 
 export const bitOf = (action: Action): number => 1 << ACTIONS.indexOf(action);
 

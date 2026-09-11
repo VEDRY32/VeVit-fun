@@ -5,7 +5,7 @@
  * nečeká na tvar I donekonečna a zároveň si nemůže být jistý pořadím.
  */
 
-import type { Rng } from '@vevit-games/engine';
+import type { Rng } from '@vevit-games/engine/core';
 import { PIECE_TYPES, type PieceType } from './pieces.js';
 
 export interface PieceQueue {

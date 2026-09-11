@@ -1,0 +1,402 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createAudioBus, createInput, createRng, createStorage, dailySeed,
+  DEFAULT_KEYMAP,
+  type GameEvent, type GameInstance, type GameModule, type Action,
+  type InputManager, type Keymap,
+} from '@vevit-games/engine';
+import {
+  PauseOverlay, ResultScreen, Leaderboard, ControlsHint, TouchOverlay,
+  categoryColors, colors, type LeaderboardEntry,
+} from '@vevit-games/ui';
+import { bySlug, catalog } from '../lib/catalog.js';
+import { createScoreApi, fetchLeaderboard, EMPTY_LEADERBOARD, type LeaderboardData } from '../lib/api.js';
+import { recordPlayed, type PortalSettings } from '../lib/settings.js';
+import { navigate } from '../lib/router.js';
+import type { I18n } from '../lib/i18n.js';
+
+interface GamePageProps {
+  slug: string;
+  i18n: I18n;
+  settings: PortalSettings;
+  onSettingsChange(patch: Partial<PortalSettings>): void;
+}
+
+type Phase = 'loading' | 'ready' | 'playing' | 'paused' | 'finished' | 'error';
+
+/** Dnešní datum v Praze — denní výzvy se resetují o půlnoci místního času. */
+function pragueToday(): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague' }).format(new Date());
+}
+
+export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePageProps): JSX.Element {
+  const entry = bySlug(slug);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<GameInstance | null>(null);
+  const moduleRef = useRef<GameModule | null>(null);
+  // Vstup patří portálu, ne hře: obsluhuje ho i dotykový overlay a nastavení
+  // přemapování kláves, které jsou mimo hru.
+  const inputRef = useRef<InputManager | null>(null);
+  const [input, setInput] = useState<InputManager | null>(null);
+
+  const [phase, setPhase] = useState<Phase>('loading');
+  const [mode, setMode] = useState<string>(() => {
+    const requested = new URLSearchParams(window.location.search).get('rezim');
+    const available = entry?.manifest.modes.map((m) => m.id) ?? [];
+    return requested && available.includes(requested) ? requested : available[0] ?? 'klasik';
+  });
+  const [score, setScore] = useState(0);
+  const [result, setResult] = useState<{ score: number; won: boolean; stats?: Record<string, number> } | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardData>(EMPTY_LEADERBOARD);
+  const [myEntry] = useState<LeaderboardEntry | null>(null);
+  const [usedActions, setUsedActions] = useState<ReadonlySet<Action>>(new Set());
+  const [needsRotate, setNeedsRotate] = useState(false);
+
+  const audio = useMemo(() => createAudioBus({
+    master: settings.master, music: settings.music, sfx: settings.sfx, muted: settings.muted,
+  }), []);
+
+  const manifest = entry?.manifest;
+  const modeSpec = manifest?.modes.find((m) => m.id === mode);
+  const accent = manifest ? categoryColors[manifest.category] : colors.zelena;
+
+  useEffect(() => {
+    audio.setSettings({
+      master: settings.master, music: settings.music, sfx: settings.sfx, muted: settings.muted,
+    });
+  }, [audio, settings.master, settings.music, settings.sfx, settings.muted]);
+
+  // Zvuk smí nastartovat až po první interakci hráče — prohlížeč to vyžaduje.
+  useEffect(() => {
+    const unlock = (): void => audio.unlock();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [audio]);
+
+  // Orientace podle manifestu.
+  useEffect(() => {
+    if (!manifest || manifest.orientation === 'any') return;
+    const check = (): void => {
+      const portrait = window.innerHeight > window.innerWidth;
+      const wrong = manifest.orientation === 'landscape' ? portrait : !portrait;
+      // Výzvu k otočení dává smysl ukazovat jen na malé obrazovce.
+      setNeedsRotate(wrong && window.innerWidth < 900);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [manifest]);
+
+  const startGame = useCallback(async (): Promise<void> => {
+    const host = hostRef.current;
+    if (!entry || !host) return;
+
+    instanceRef.current?.destroy();
+    instanceRef.current = null;
+    inputRef.current?.destroy();
+    inputRef.current = null;
+    host.replaceChildren();
+    setPhase('loading');
+    setResult(null);
+    setScore(0);
+
+    let module: GameModule;
+    try {
+      module = moduleRef.current ?? (await entry.load());
+      moduleRef.current = module;
+    } catch {
+      setPhase('error');
+      return;
+    }
+
+    const storage = createStorage({
+      gameSlug: entry.manifest.slug,
+      version: entry.manifest.rulesVersion,
+    });
+    const scoringByMode = Object.fromEntries(
+      entry.manifest.modes.map((m) => [m.id, m.scoring]),
+    ) as Record<string, 'high' | 'low'>;
+    const scores = createScoreApi(entry.manifest.slug, storage, scoringByMode);
+
+    // Denní výzva má seed odvozený z data, ostatní režimy od serveru.
+    const handle = mode === 'denni'
+      ? { runId: null, seed: dailySeed(entry.manifest.slug, pragueToday()) }
+      : await scores.start(mode);
+
+    const onEvent = (event: GameEvent): void => {
+      switch (event.type) {
+        case 'started':
+          setPhase('playing');
+          break;
+        case 'paused':
+          setPhase('paused');
+          break;
+        case 'score':
+          setScore(event.value);
+          break;
+        case 'gameover':
+          setResult({ score: event.score, won: false, stats: event.stats });
+          setPhase('finished');
+          break;
+        case 'win':
+          setResult({ score: event.score, won: true, stats: event.stats });
+          setPhase('finished');
+          break;
+        case 'error':
+          setPhase('error');
+          break;
+        default:
+          break;
+      }
+    };
+
+    const gameInput = createInput({
+      target: host,
+      logicalWidth: entry.manifest.aspect.width,
+      logicalHeight: entry.manifest.aspect.height,
+      keymap: { ...DEFAULT_KEYMAP, ...(module.keymap as Partial<Keymap> | undefined) },
+    });
+    inputRef.current = gameInput;
+    setInput(gameInput);
+
+    instanceRef.current = module.mount(host, {
+      input: gameInput,
+      audio,
+      rng: createRng(handle.seed),
+      storage,
+      scores,
+      i18n: { locale: i18n.locale, t: i18n.t, pick: i18n.pick },
+      theme: {
+        accent: categoryColors[entry.manifest.category],
+        background: colors.noc,
+        surface: colors.pult,
+        text: colors.text,
+        textMuted: colors.textTlumeny,
+        reducedMotion: settings.reducedMotion,
+        colorblind: settings.colorblind,
+        lowQuality: settings.lowQuality,
+      },
+      mode,
+      seed: handle.seed,
+      emit: onEvent,
+    });
+
+    recordPlayed(entry.manifest.slug);
+  }, [entry, mode, audio, i18n, settings.reducedMotion, settings.colorblind, settings.lowQuality]);
+
+  useEffect(() => {
+    void startGame();
+    return () => {
+      instanceRef.current?.destroy();
+      instanceRef.current = null;
+      inputRef.current?.destroy();
+      inputRef.current = null;
+    };
+  }, [startGame]);
+
+  // Nápověda ovládání mizí po řádcích, jak hráč akce zkouší.
+  useEffect(() => {
+    if (!input || phase !== 'playing') return;
+    const timer = window.setInterval(() => setUsedActions(new Set(input.usedActions)), 400);
+    return () => window.clearInterval(timer);
+  }, [input, phase]);
+
+  useEffect(() => {
+    if (!entry) return;
+    void fetchLeaderboard(entry.manifest.slug, mode).then(setLeaderboard);
+  }, [entry, mode]);
+
+  // Escape pauzuje hru — jediná klávesa, kterou portál hrám bere.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      if (phase === 'playing') {
+        instanceRef.current?.pause();
+        setPhase('paused');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase]);
+
+  if (!entry || !manifest) {
+    return (
+      <div className="stav">
+        <h1>{i18n.t('error.notFound')}</h1>
+        <a className="tlacitko tlacitko--hlavni" href={`/${i18n.locale}/`}>{i18n.t('error.backHome')}</a>
+      </div>
+    );
+  }
+
+  const similar = catalog
+    .filter((e) => e.manifest.category === manifest.category && e.manifest.slug !== slug)
+    .slice(0, 4);
+
+  return (
+    <div className="hra" style={{ ['--akcent' as string]: accent }}>
+      <div className="hra__lista">
+        <a className="hra__zpet" href={`/${i18n.locale}/`}>
+          <span aria-hidden="true">‹</span>
+          <span className="hra__zpet-text">{i18n.t('nav.allGames')}</span>
+        </a>
+        <h1 className="hra__nazev">{manifest.title[i18n.locale]}</h1>
+        <div className="hra__nastroje">
+          <span className="hra__skore tabular">{score.toLocaleString('cs-CZ')}</span>
+          <button
+            type="button"
+            className="hra__ikona"
+            aria-pressed={settings.muted}
+            onClick={() => onSettingsChange({ muted: !settings.muted })}
+          >
+            <span aria-hidden="true">{settings.muted ? '🔇' : '🔊'}</span>
+            <span className="vizualne-skryte">
+              {settings.muted ? 'Zapnout zvuk' : 'Ztlumit zvuk'}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="hra__ikona"
+            onClick={() => {
+              instanceRef.current?.pause();
+              setPhase('paused');
+            }}
+          >
+            <span aria-hidden="true">⏸</span>
+            <span className="vizualne-skryte">Pauza</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="hra__telo">
+        <div
+          className="hra__plocha"
+          style={{
+            ['--pomer-w' as string]: manifest.aspect.width,
+            ['--pomer-h' as string]: manifest.aspect.height,
+          }}
+        >
+          <div className="hra__host" ref={hostRef} />
+
+          {phase === 'loading' && <p className="hra__stav">{i18n.t('game.loading')}</p>}
+          {phase === 'error' && (
+            <div className="hra__stav">
+              <p>{i18n.t('error.loadGame')}</p>
+              <button type="button" className="tlacitko tlacitko--hlavni" onClick={() => void startGame()}>
+                {i18n.t('error.retry')}
+              </button>
+            </div>
+          )}
+          {needsRotate && <p className="hra__otoc">{i18n.t('game.rotate')}</p>}
+
+          {moduleRef.current?.controlHints && (
+            <ControlsHint
+              visible={phase === 'playing'}
+              used={usedActions}
+              items={moduleRef.current.controlHints.map((hint) => ({
+                action: hint.action as Action,
+                label: hint.label,
+                keys: hint.keys,
+              }))}
+            />
+          )}
+
+          {/* Dotykové ovládání patří nad herní plochu, ne nad celou stránku. */}
+          {input && moduleRef.current?.touchButtons && (
+            <TouchOverlay
+              input={input}
+              buttons={moduleRef.current.touchButtons.map((b) => ({ ...b, action: b.action as Action }))}
+              leftHanded={settings.leftHanded}
+              visible={phase === 'playing'}
+            />
+          )}
+        </div>
+
+        <aside className="hra__panel">
+          <section>
+            <h2>{i18n.t('game.mode')}</h2>
+            <div className="rezimy">
+              {manifest.modes.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`rezim ${m.id === mode ? 'je-aktivni' : ''}`}
+                  onClick={() => setMode(m.id)}
+                >
+                  {m.name[i18n.locale]}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2>{i18n.t('game.controls')}</h2>
+            <ul className="ovladani">
+              {(moduleRef.current?.controlHints ?? []).map((hint) => (
+                <li key={hint.action + hint.keys}>
+                  <kbd>{hint.keys}</kbd>
+                  <span>{hint.label}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2>{i18n.t('game.leaderboard')}</h2>
+            <Leaderboard entries={leaderboard} myEntry={myEntry} unit={modeSpec?.unit} />
+          </section>
+        </aside>
+      </div>
+
+      {similar.length > 0 && (
+        <section className="podobne">
+          <h2>{i18n.t('game.similar')}</h2>
+          <ul>
+            {similar.map((e) => (
+              <li key={e.manifest.slug}>
+                <a href={`/${i18n.locale}/${e.manifest.slug}`}>{e.manifest.title[i18n.locale]}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <PauseOverlay
+        open={phase === 'paused'}
+        onResume={() => {
+          instanceRef.current?.resume();
+          setPhase('playing');
+        }}
+        onRestart={() => {
+          instanceRef.current?.restart();
+          setPhase('playing');
+        }}
+        onControls={() => document.querySelector('.ovladani')?.scrollIntoView({ behavior: 'smooth' })}
+        onSettings={() => navigate(`/${i18n.locale}/nastaveni`)}
+        onLeave={() => navigate(`/${i18n.locale}/`)}
+      />
+
+      <ResultScreen
+        open={phase === 'finished' && result != null}
+        title={result?.won ? i18n.t('game.youWon') : i18n.t('game.gameOver')}
+        score={result?.score ?? 0}
+        unit={modeSpec?.unit}
+        personalBest={null}
+        isNewBest={false}
+        stats={Object.entries(result?.stats ?? {}).map(([label, value]) => ({
+          label,
+          value: String(value),
+        }))}
+        onRestart={() => {
+          instanceRef.current?.restart();
+          setPhase('playing');
+        }}
+        onLeave={() => navigate(`/${i18n.locale}/`)}
+      />
+
+    </div>
+  );
+}

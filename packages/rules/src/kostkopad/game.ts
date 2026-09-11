@@ -6,7 +6,7 @@
  * ze záznamu vstupů a ověřit skóre (D-008).
  */
 
-import { createRng, type Rng } from '@vevit-games/engine';
+import { createRng, type Rng } from '@vevit-games/engine/core';
 import { BIT, justPressed, isHeld } from '../input-bits.js';
 import {
   PIECE_SHAPES, kicksFor, rotateIndex,

@@ -158,8 +158,34 @@ export interface GameInstance {
   loadSave?(data: unknown): boolean;
 }
 
+/** Popis jednoho tlačítka dotykového overlay, který portál hře vykreslí. */
+export interface TouchButtonSpec {
+  action: string;
+  label: string;
+  /** Pozice v procentech herní plochy. */
+  x: number;
+  y: number;
+  size?: number;
+}
+
+/** Řádek interaktivní nápovědy ovládání. */
+export interface ControlHintSpec {
+  action: string;
+  label: string;
+  keys: string;
+}
+
 export interface GameModule {
   manifest: GameManifest;
+  /**
+   * Vlastní rozložení kláves. Portál ho použije, když hře vytváří vstup —
+   * hra si vstup nevytváří sama, aby ho uměl obsluhovat i dotykový overlay.
+   */
+  keymap?: Partial<Record<string, string[]>>;
+  /** Dotykové ovládání — portál z toho poskládá overlay. */
+  touchButtons?: TouchButtonSpec[];
+  /** Nápověda ovládání při prvním spuštění. */
+  controlHints?: ControlHintSpec[];
   mount(el: HTMLElement, ctx: GameContext): GameInstance;
   /** Samohrající ukázka pro hero a dlaždice. `t` je čas v sekundách. */
   renderAttract(canvas: HTMLCanvasElement, t: number): void;
