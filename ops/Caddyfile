@@ -1,0 +1,73 @@
+{
+	email {$ACME_EMAIL}
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+(compression) {
+	encode zstd gzip
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Cross-Origin-Opener-Policy "same-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()"
+		-Server
+	}
+}
+
+# --- Portál a API -----------------------------------------------------------
+vevit.fun, www.vevit.fun {
+	import compression
+	import security_headers
+
+	# Přesná CSP. `wasm-unsafe-eval` jen tam, kde ho hra opravdu potřebuje (D-007, R3).
+	@wasm path /cs/sachy* /en/chess*
+	header @wasm Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' wss://rt.vevit.fun; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' wss://rt.vevit.fun; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		root * /srv/web
+
+		# Hashované assety jsou neměnné.
+		@immutable path /assets/* /fonts/* /covers/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		# HTML a service worker se nikdy necachují natvrdo.
+		@nocache path / /index.html /sw.js /manifest.webmanifest
+		header @nocache Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# --- Realtime (WebSocket) ---------------------------------------------------
+# Vlastní subdoména, protože WS neprojde přes rewrite hlavního webu (zadání 3.1).
+rt.vevit.fun {
+	import security_headers
+
+	handle /healthz {
+		reverse_proxy realtime:3002
+	}
+
+	handle /ws {
+		reverse_proxy realtime:3002
+	}
+
+	handle {
+		respond 404
+	}
+}

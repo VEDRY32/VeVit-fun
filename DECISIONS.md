@@ -1,0 +1,155 @@
+# Architektonická rozhodnutí
+
+Formát: ID, kontext, rozhodnutí, důsledky.
+
+---
+
+## D-001 — Samostatné repo místo monorepa
+
+**Kontext.** Zadání popisuje `ve-vit-web-monorepo` s `proxy.ts`, sdílenou auth vrstvou
+a Supabase migracemi. Repozitář `VEDRY32/VeVit-fun` byl při zahájení prázdný
+(0 commitů, 0 souborů).
+
+**Rozhodnutí.** Stavíme samostatný pnpm workspace v kořeni tohoto repa. Struktura
+z promptu (sekce 11) je zachována, jen bez obalového adresáře `games/` — ten by
+byl v dedikovaném repu nadbytečný.
+
+**Důsledky.** Integrace s vevit.cz se řeší až při existenci monorepa, přes
+adaptér v `apps/api/src/auth/`. Nic v kódu nepředpokládá konkrétní monorepo cesty.
+
+---
+
+## D-002 — Doména vevit.fun, ne vevit.cz/cs/games
+
+**Kontext.** Zadání mluví o `vevit.cz/cs/games` a Vercel rewrite. Uživatel zadal
+doménu **www.vevit.fun**.
+
+**Rozhodnutí.** Portál běží na vlastní doméně `vevit.fun`. Vercel rewrite
+z hlavního webu tím odpadá; zůstává jako volitelná budoucí varianta.
+
+**Důsledky.** Cookie `__Host-vvsession` se mezi doménami nepřenese. SSO proto
+funguje přes **cross-site session bridge**: vevit.cz vydá krátkodobý podepsaný
+ticket, vevit.fun ho vymění za vlastní cookie `__Host-vvfsession` (SameSite=Lax,
+Secure, HttpOnly). Do doby, než monorepo existuje, běží lokální účty přes stejné
+rozhraní — kód auth vrstvy je na zdroji identity nezávislý.
+Riziko rewrite → externí origin (přeposílání cookies) tím zaniká.
+
+---
+
+## D-003 — Node 22 místo Node 24
+
+**Kontext.** Zadání předpokládá Node 24; v prostředí je Node 22.22.2.
+
+**Rozhodnutí.** `engines.node: ">=22"`. Nepoužíváme nic, co je jen v Node 24.
+
+**Důsledky.** Docker image `node:22-alpine`; přechod na 24 je jednořádková změna.
+
+---
+
+## D-004 — Auth jako adaptér, ne přímá závislost
+
+**Rozhodnutí.** `apps/api/src/auth/` definuje rozhraní `SessionStore` a
+`IdentityProvider`. Implementace: `LocalIdentityProvider` (vlastní účty, Argon2id)
+a `VevitSsoProvider` (výměna ticketu z vevit.cz). Volba přes `AUTH_PROVIDER` v `.env`.
+
+**Důsledky.** Vývoj nečeká na SSO. Přepnutí na produkční SSO nemění nic ve hrách
+ani v portálu.
+
+---
+
+## D-005 — Realtime: čisté `ws`, ne Colyseus
+
+**Kontext.** Zadání nechává volbu na nás.
+
+**Rozhodnutí.** Vlastní room vrstva nad `ws`.
+
+**Zdůvodnění.**
+1. Potřebujeme **binární delta protokol** s viditelností podle zorného pole
+   (Buňky.io, Hadi.io). Colyseus má vlastní schema/patch systém, který bychom
+   u těchto her stejně obcházeli.
+2. **Rollback netcode** u Rvačky vyžaduje kontrolu nad frontou vstupů a
+   re-simulací; Colyseus je stavěný na state-sync, ne na lockstep/rollback.
+3. Autorizace ticketem a `Origin` kontrola je v `ws` triviální.
+4. O ~180 kB menší server a nulová závislost na cizím release cyklu.
+
+**Cena.** Musíme si sami napsat matchmaking, reconnect a room lifecycle —
+to je `packages/net` + `apps/realtime/src/rooms/`.
+
+---
+
+## D-006 — Vlastní binární kodér místo msgpack
+
+**Rozhodnutí.** `packages/net/src/codec.ts` — schema-driven kodér nad `DataView`
+(u8/u16/i16/f32/varint/string/array/delta-of-previous-state).
+
+**Zdůvodnění.** Herní zprávy mají pevné schéma. Vlastní kodér je pro tento tvar dat
+2–4× menší než msgpack a nepotřebuje slovník klíčů v každém rámci. msgpack by dával
+smysl u proměnlivých struktur, které tu nemáme.
+
+---
+
+## D-007 — Canvas 2D jako výchozí, PixiJS a Planck.js jen kde je potřeba
+
+**Rozhodnutí.** Jádro enginu je rendererově agnostické (`RenderTarget`), výchozí
+implementace Canvas 2D. PixiJS se lazy-loaduje jen u Buňky.io, Hadi.io, Rytmoskok,
+Válka panáčků. Planck.js jen u Ježčích dělostřelců, Panáčků: aréna, Magnetky.
+
+**Důsledky.** Většina her má chunk hluboko pod limitem 250 kB gz; těžké závislosti
+platí jen ty hry, které je opravdu potřebují.
+
+---
+
+## D-008 — Validace skóre přehráním replaye
+
+**Rozhodnutí.** Deterministické hry posílají `ReplayLog` (seed + komprimované
+delta vstupů). Server přehraje headless přes stejný `@vevit-games/rules` modul
+a uzná skóre jen při shodě. Nedeterministické hry: sanity limity + statistika.
+
+**Důsledky.** Herní logika **nesmí** sahat na DOM, `Math.random`, `Date.now`.
+Vynucuje ESLint pravidlo `no-restricted-globals` + `no-restricted-properties`
+v `packages/rules` a `titles/*/logic`.
+
+---
+
+## D-009 — Databáze: Postgres schéma `games`, přístup jen přes API
+
+**Rozhodnutí.** Migrace v `apps/api/migrations/*.sql`, kompatibilní se Supabase
+(schéma `games`, `user_id text`, RLS zapnuté a **deny-all** pro `anon`
+a `authenticated`; zapisuje jen service role). Odpovědi slovních her jsou
+v samostatné tabulce `games.daily_answers` bez jakékoliv grant pro anon role.
+
+**Důsledky.** Klient nikdy nemluví se Supabase přímo. Lokální vývoj používá
+tentýž Postgres z Docker Compose.
+
+---
+
+## D-010 — Fixed-point matematika v hodnocených a online hrách
+
+**Rozhodnutí.** `packages/engine/src/math/fixed.ts` — Q16.16 s celočíselnými
+operacemi. Povinné v logice her s replay validací nebo online režimem
+(Kostkopád, Rvačka, Válka panáčků, Odpal, Běžec, Mávník, Rytmoskok, Cihlobijec).
+Ostatní singleplayer hry (Sudoku, Pexeso, Osmisměrka…) jsou diskrétní a float
+v nich nehrozí.
+
+---
+
+## D-011 — Písma self-hostovaná, žádné Google Fonts CDN
+
+**Rozhodnutí.** Bricolage Grotesque (OFL), Atkinson Hyperlegible Next (OFL),
+Pixelify Sans (OFL) se stahují build skriptem do `apps/portal/public/fonts`
+a servírují z vlastní domény.
+
+**Zdůvodnění.** CSP bez cizích originů, GDPR, žádný render-blocking third party.
+Fallback stack je definován v tokenech, takže portál je čitelný i bez písem.
+
+---
+
+## D-012 — Názvosloví a IP
+
+**Rozhodnutí.** V celém repu (kód, slugy, URL, testy, commity) se používají
+**výhradně** názvy z katalogu zadání. Chráněné názvy originálů se neobjevují
+ani v komentářích. Slugy jsou bezdiakritické ASCII varianty českých názvů
+(`kostkopad`, `petipismenka`, `hledac-min`).
+
+**Vynuceno.** `scripts/check-ip.mjs` v CI prochází repo na seznam zakázaných
+řetězců a selže při nálezu.

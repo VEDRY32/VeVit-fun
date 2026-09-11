@@ -1,0 +1,25 @@
+{
+  "name": "vevit-games",
+  "private": true,
+  "version": "0.1.0",
+  "description": "VeVit Games — herní portál vevit.fun",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @vevit-games/portal dev",
+    "dev:api": "pnpm --filter @vevit-games/api dev",
+    "build": "pnpm -r --filter './packages/*' build && pnpm --filter @vevit-games/portal build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
