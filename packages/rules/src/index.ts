@@ -12,3 +12,5 @@ export * from './zdvojka/game.js';
 export * from './had/game.js';
 export * from './hledac-min/game.js';
 export * from './petipismenka/evaluate.js';
+export * from './pasiansy/cards.js';
+export * from './pasiansy/game.js';

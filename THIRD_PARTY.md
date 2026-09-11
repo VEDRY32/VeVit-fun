@@ -34,8 +34,10 @@ ověřená před použitím. GPL jen jako izolovaný worker s atribucí.
 | Atkinson Hyperlegible Next | OFL 1.1 | text a UI |
 | Pixelify Sans | OFL 1.1 | HUD retro arkád |
 
-Self-hostované (D-011). OFL vyžaduje zachování licence — soubory licencí jdou
-do `apps/portal/public/fonts/OFL-*.txt`.
+Self-hostované (D-011), staženo skriptem `scripts/fetch-fonts.mjs` do
+`apps/portal/public/fonts` (300 kB celkem, jen podmnožiny latin a latin-ext).
+OFL vyžaduje šíření licence spolu s písmem — texty licencí leží vedle souborů
+jako `OFL-*.txt` a servírují se ze stejné domény.
 
 ## Datové sady
 

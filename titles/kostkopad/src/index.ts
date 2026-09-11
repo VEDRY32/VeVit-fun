@@ -39,14 +39,19 @@ export const keymap: Partial<Keymap> = {
 export { manifest };
 export { renderAttract };
 
+/**
+ * Rozmístění respektuje hrací pole: to leží mezi 29 % a 76 % šířky a končí
+ * na 89 % výšky. Tlačítka jsou proto v postranních pruzích a pod polem,
+ * aby hráč viděl, kam tvar dopadá.
+ */
 export const touchButtons = [
-  { action: 'left', label: '◀', x: 12, y: 78, size: 64 },
-  { action: 'right', label: '▶', x: 28, y: 78, size: 64 },
-  { action: 'down', label: '▼', x: 20, y: 90, size: 64 },
-  { action: 'b', label: '↺', x: 72, y: 78, size: 64 },
-  { action: 'x', label: '↻', x: 88, y: 78, size: 64 },
-  { action: 'a', label: '⤓', x: 80, y: 90, size: 64 },
-  { action: 'y', label: 'DRŽ', x: 88, y: 64, size: 56 },
+  { action: 'left', label: '◀', x: 7, y: 84, size: 62 },
+  { action: 'right', label: '▶', x: 21, y: 84, size: 62 },
+  { action: 'down', label: '▼', x: 14, y: 95, size: 62 },
+  { action: 'b', label: '↺', x: 79, y: 84, size: 62 },
+  { action: 'x', label: '↻', x: 93, y: 84, size: 62 },
+  { action: 'a', label: '⤓', x: 86, y: 95, size: 62 },
+  { action: 'y', label: 'DRŽ', x: 93, y: 70, size: 54 },
 ];
 
 export const controlHints = [

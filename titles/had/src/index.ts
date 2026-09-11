@@ -33,11 +33,15 @@ export const keymap: Partial<Keymap> = {
   down: ['ArrowDown', 'KeyS'],
 };
 
+/**
+ * Had se ovládá hlavně švihem přes celou plochu; kříž je záloha, proto sedí
+ * v rozích, kde překrývá nejmíň hracího pole.
+ */
 export const touchButtons = [
-  { action: 'left', label: '◀', x: 12, y: 80, size: 60 },
-  { action: 'right', label: '▶', x: 32, y: 80, size: 60 },
-  { action: 'up', label: '▲', x: 78, y: 72, size: 60 },
-  { action: 'down', label: '▼', x: 78, y: 90, size: 60 },
+  { action: 'left', label: '◀', x: 8, y: 92, size: 56 },
+  { action: 'right', label: '▶', x: 24, y: 92, size: 56 },
+  { action: 'up', label: '▲', x: 76, y: 92, size: 56 },
+  { action: 'down', label: '▼', x: 92, y: 92, size: 56 },
 ];
 
 export const controlHints = [

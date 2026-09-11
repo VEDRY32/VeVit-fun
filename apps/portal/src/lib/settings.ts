@@ -1,6 +1,6 @@
 /** Nastavení portálu — přežívá v localStorage a platí napříč všemi hrami. */
 
-import type { Locale } from '@vevit-games/engine';
+import type { Keymap, Locale } from '@vevit-games/engine';
 
 export interface PortalSettings {
   locale: Locale;
@@ -12,6 +12,8 @@ export interface PortalSettings {
   colorblind: boolean;
   lowQuality: boolean;
   leftHanded: boolean;
+  /** Přemapované klávesy; prázdné = výchozí rozložení hry. */
+  keymap: Partial<Keymap>;
 }
 
 const KEY = 'vevit.games.settings';
@@ -26,6 +28,7 @@ export const DEFAULT_SETTINGS: PortalSettings = {
   colorblind: false,
   lowQuality: false,
   leftHanded: false,
+  keymap: {},
 };
 
 export function loadSettings(): PortalSettings {

@@ -10,6 +10,15 @@
       content="Herní portál VeVit: logické hry, arkády, akce i hry pro víc hráčů. Zdarma, bez instalace, v prohlížeči."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!--
+      Self-hostovaná písma (D-011): žádný cizí origin, CSP je bez
+      fonts.googleapis.com. Latinská podmnožina se předepíná, protože
+      na ní stojí veškerý text portálu; latin-ext dotáhne diakritiku.
+    -->
+    <link rel="preload" href="/fonts/AtkinsonHyperlegibleNext-latin-1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/BricolageGrotesque-latin-1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
   </head>
   <body>
     <div id="root"></div>

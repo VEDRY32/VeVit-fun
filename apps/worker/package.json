@@ -1,0 +1,15 @@
+{
+  "name": "@vevit-games/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vevit-games/engine": "workspace:*",
+    "@vevit-games/rules": "workspace:*"
+  }
+}

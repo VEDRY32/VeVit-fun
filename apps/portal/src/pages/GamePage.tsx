@@ -158,7 +158,13 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
       target: host,
       logicalWidth: entry.manifest.aspect.width,
       logicalHeight: entry.manifest.aspect.height,
-      keymap: { ...DEFAULT_KEYMAP, ...(module.keymap as Partial<Keymap> | undefined) },
+      // Pořadí je záměrné: výchozí rozložení, pak rozložení hry a nakonec
+      // přemapování hráče, které má vždycky poslední slovo.
+      keymap: {
+        ...DEFAULT_KEYMAP,
+        ...(module.keymap as Partial<Keymap> | undefined),
+        ...settings.keymap,
+      },
     });
     inputRef.current = gameInput;
     setInput(gameInput);
@@ -186,7 +192,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     });
 
     recordPlayed(entry.manifest.slug);
-  }, [entry, mode, audio, i18n, settings.reducedMotion, settings.colorblind, settings.lowQuality]);
+  }, [
+    entry, mode, audio, i18n,
+    settings.reducedMotion, settings.colorblind, settings.lowQuality, settings.keymap,
+  ]);
 
   useEffect(() => {
     void startGame();

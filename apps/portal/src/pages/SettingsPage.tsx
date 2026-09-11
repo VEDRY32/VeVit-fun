@@ -1,3 +1,4 @@
+import { KeymapEditor } from '../components/KeymapEditor.js';
 import type { PortalSettings } from '../lib/settings.js';
 import type { I18n } from '../lib/i18n.js';
 
@@ -86,6 +87,14 @@ export function SettingsPage({ i18n, settings, onChange }: Props): JSX.Element {
           label={i18n.t('settings.leftHanded')}
           checked={settings.leftHanded}
           onChange={(leftHanded) => onChange({ leftHanded })}
+        />
+      </section>
+
+      <section>
+        <h2>{i18n.t('settings.controls')}</h2>
+        <KeymapEditor
+          keymap={settings.keymap}
+          onChange={(keymap) => onChange({ keymap })}
         />
       </section>
 

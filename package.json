@@ -15,7 +15,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/rules --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "smoke": "node scripts/smoke-ui.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

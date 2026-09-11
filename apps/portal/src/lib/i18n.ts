@@ -77,6 +77,7 @@ const STRINGS: Record<string, LocalizedText> = {
     en: 'Turns off particles and effects. Helps older phones.',
   },
   'settings.leftHanded': { cs: 'Ovládání pro leváky', en: 'Left-handed controls' },
+  'settings.controls': { cs: 'Ovládání', en: 'Controls' },
   'settings.language': { cs: 'Jazyk', en: 'Language' },
 };
 

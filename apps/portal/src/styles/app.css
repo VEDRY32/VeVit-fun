@@ -1001,3 +1001,50 @@ input[type='checkbox'] {
     text-align: left;
   }
 }
+
+/* --- Přemapování kláves -------------------------------------------------- */
+
+.klavesy__popis,
+.klavesy__konflikt {
+  font-size: var(--fs-xs);
+  color: var(--text-tlumeny);
+  margin-bottom: var(--s-sm);
+}
+
+.klavesy__konflikt {
+  color: var(--kat-arkady);
+}
+
+.klavesy__seznam {
+  list-style: none;
+  margin: 0 0 var(--s-md);
+  padding: 0;
+  display: grid;
+  gap: var(--s-xs);
+}
+
+.klavesy__seznam li {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  align-items: center;
+  gap: var(--s-md);
+  font-size: var(--fs-xs);
+}
+
+.klavesy__klavesa {
+  padding: 7px var(--s-md);
+  border-radius: var(--r-field);
+  border: 1px solid var(--linka);
+  background: var(--pult);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+.klavesy__klavesa:hover {
+  border-color: var(--akcent);
+}
+
+.klavesy__klavesa.je-aktivni {
+  border-color: var(--zelena);
+  color: var(--zelena);
+}

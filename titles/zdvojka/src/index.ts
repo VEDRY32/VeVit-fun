@@ -35,11 +35,15 @@ export const keymap: Partial<Keymap> = {
   b: ['KeyZ'],
 };
 
+/**
+ * Zdvojka se hlavně ovládá švihem, takže kříž je jen doplněk.
+ * Leží v horním pruhu nad mřížkou, kde nic nepřekrývá.
+ */
 export const touchButtons = [
-  { action: 'left', label: '◀', x: 14, y: 88, size: 60 },
-  { action: 'right', label: '▶', x: 38, y: 88, size: 60 },
-  { action: 'up', label: '▲', x: 62, y: 88, size: 60 },
-  { action: 'down', label: '▼', x: 86, y: 88, size: 60 },
+  { action: 'left', label: '◀', x: 40, y: 14, size: 52 },
+  { action: 'up', label: '▲', x: 52, y: 8, size: 52 },
+  { action: 'down', label: '▼', x: 52, y: 20, size: 52 },
+  { action: 'right', label: '▶', x: 64, y: 14, size: 52 },
 ];
 
 export const controlHints = [
@@ -108,7 +112,10 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   let moveAnim = 0;
   let lastScore = 0;
 
-  const size = VIEW_W - BOARD_PAD * 2;
+  // Mřížka musí být čtvercová a vejít se i na výšku — jinak poslední řádek
+  // zmizí pod spodní hranou plátna.
+  const size = Math.min(VIEW_W - BOARD_PAD * 2, VIEW_H - BOARD_TOP - BOARD_PAD);
+  const boardX = (VIEW_W - size) / 2;
   const cellSize = size / game.config.size;
 
   const finish = (): void => {
@@ -140,18 +147,18 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     c.font = '500 12px system-ui, sans-serif';
     c.textAlign = 'left';
     c.textBaseline = 'top';
-    c.fillText('SKÓRE', BOARD_PAD, 26);
-    c.fillText('TAHY', VIEW_W - BOARD_PAD - 60, 26);
+    c.fillText('SKÓRE', boardX, 26);
+    c.fillText('TAHY', VIEW_W - boardX - 60, 26);
 
     c.fillStyle = ctx.theme.text;
     c.font = '600 34px system-ui, sans-serif';
-    c.fillText(game.state.score.toLocaleString('cs-CZ'), BOARD_PAD, 44);
+    c.fillText(game.state.score.toLocaleString('cs-CZ'), boardX, 44);
     c.font = '600 20px system-ui, sans-serif';
-    c.fillText(String(game.state.moves), VIEW_W - BOARD_PAD - 60, 46);
+    c.fillText(String(game.state.moves), VIEW_W - boardX - 60, 46);
 
     // Podklad mřížky.
     c.fillStyle = ctx.theme.surface;
-    roundRect(c, BOARD_PAD, BOARD_TOP, size, size, 12);
+    roundRect(c, boardX, BOARD_TOP, size, size, 12);
     c.fill();
 
     for (let y = 0; y < game.config.size; y++) {
@@ -159,7 +166,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         c.fillStyle = withAlpha(ctx.theme.text, 0.05);
         roundRect(
           c,
-          BOARD_PAD + x * cellSize + 5, BOARD_TOP + y * cellSize + 5,
+          boardX + x * cellSize + 5, BOARD_TOP + y * cellSize + 5,
           cellSize - 10, cellSize - 10, 7,
         );
         c.fill();
@@ -178,7 +185,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       else if (tile.merged) scale = 1 + Math.sin(progress * Math.PI) * 0.12;
 
       const inset = 5 + (cellSize - 10) * (1 - scale) / 2;
-      const px = BOARD_PAD + tx * cellSize + inset;
+      const px = boardX + tx * cellSize + inset;
       const py = BOARD_TOP + ty * cellSize + inset;
       const dim = (cellSize - 10) * scale;
 

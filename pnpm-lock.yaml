@@ -64,6 +64,15 @@ importers:
         specifier: ^6.0.5
         version: 6.4.3(@types/node@22.20.2)
 
+  apps/worker:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
   packages/engine: {}
 
   packages/rules:
@@ -110,6 +119,15 @@ importers:
         version: link:../../packages/rules
 
   titles/kostkopad:
+    dependencies:
+      '@vevit-games/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@vevit-games/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+
+  titles/pasiansy:
     dependencies:
       '@vevit-games/engine':
         specifier: workspace:*
