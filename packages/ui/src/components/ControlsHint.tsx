@@ -20,6 +20,11 @@ export interface ControlsHintProps {
   anchor?: 'vlevo-dole' | 'vlevo-nahore' | 'vpravo-dole' | 'vpravo-nahore';
   /** Po kolika sekundách nápověda zmizí sama. */
   timeoutSeconds?: number;
+  /**
+   * Po kolika sekundách zmizí od chvíle, kdy hráč použil první akci.
+   * Kdo už hraje, nápovědu nečte — a ta pak jen překáží.
+   */
+  afterFirstActionSeconds?: number;
 }
 
 /**
@@ -31,15 +36,23 @@ export interface ControlsHintProps {
  * stalo Sudoku, kde zakrývala číselník.
  */
 export function ControlsHint({
-  items, used, visible, anchor = 'vlevo-dole', timeoutSeconds = 12,
+  items, used, visible, anchor = 'vlevo-dole',
+  timeoutSeconds = 12, afterFirstActionSeconds = 3,
 }: ControlsHintProps): JSX.Element | null {
   const [expired, setExpired] = useState(false);
+  const started = used.size > 0;
 
   useEffect(() => {
     if (!visible || timeoutSeconds <= 0) return;
     const timer = window.setTimeout(() => setExpired(true), timeoutSeconds * 1000);
     return () => window.clearTimeout(timer);
   }, [visible, timeoutSeconds]);
+
+  useEffect(() => {
+    if (!visible || !started || afterFirstActionSeconds <= 0) return;
+    const timer = window.setTimeout(() => setExpired(true), afterFirstActionSeconds * 1000);
+    return () => window.clearTimeout(timer);
+  }, [visible, started, afterFirstActionSeconds]);
 
   const remaining = items.filter((item) => !used.has(item.action));
   if (!visible || expired || remaining.length === 0) return null;

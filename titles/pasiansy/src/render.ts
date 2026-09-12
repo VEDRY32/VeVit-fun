@@ -13,6 +13,10 @@ export const CARD_H = 130;
 /** Rozestup odkrytých karet ve sloupci; zakryté leží těsněji. */
 export const STACK_FACE_UP = 30;
 export const STACK_FACE_DOWN = 13;
+/** Tloušťka jedné vrstvy u hromádky, která se nerozkládá (zásoba, cíle). */
+export const DECK_LAYER = 1.5;
+/** Víc vrstev už jen zašumí, výš se balíček nezvedá. */
+export const DECK_MAX_LAYERS = 6;
 
 /* Líc karty je světlý, proto na něm musí být inkoust tmavý — herní paleta
    je laděná na tmavé pozadí, tyhle dvě barvy proto vznikají tady. */
@@ -160,6 +164,14 @@ export function layoutFor(variant: 'klondike' | 'pavouk' | 'freecell'): PileLayo
 
 /** Svislá pozice karty ve sloupci — zakryté karty leží těsněji. */
 export function cardOffsetY(pile: Pile, index: number, spread: number): number {
+  /*
+   * Hromádka bez rozkladu (`spread === 0`) je balíček, ne sloupec. Dřív se
+   * i tady každá rubová karta odsadila o STACK_FACE_DOWN, takže zásoba
+   * o dvaceti čtyřech kartách sahala přes tři sta pixelů dolů a protínala
+   * sloupce pod sebou. Teď se jen mírně zvedá jako opravdový balíček.
+   */
+  if (spread === 0) return -Math.min(index, DECK_MAX_LAYERS) * DECK_LAYER;
+
   let offset = 0;
   for (let i = 0; i < index; i++) {
     offset += pile.cards[i]!.faceUp ? spread : STACK_FACE_DOWN;

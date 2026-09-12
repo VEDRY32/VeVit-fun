@@ -18,5 +18,5 @@ export const manifest: GameManifest = {
   orientation: 'any',
   avgSessionMin: 2,
   difficulty: 2,
-  rulesVersion: 1,
+  rulesVersion: 2,
 };

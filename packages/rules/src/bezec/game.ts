@@ -11,7 +11,7 @@ import {
 } from '@vevit-games/engine/core';
 import { BIT, justPressed, isHeld } from '../input-bits.js';
 
-export const BEZEC_RULES_VERSION = 1;
+export const BEZEC_RULES_VERSION = 2;
 
 export const WORLD_W = 640;
 export const WORLD_H = 240;
@@ -33,7 +33,10 @@ const MAX_SPEED = fx(11);
 /** Přírůstek rychlosti za krok; po ~2 minutách se dojede na strop. */
 const SPEED_GAIN = fx(0.00055);
 
-export type ObstacleKind = 'ker-maly' | 'ker-velky' | 'ker-trojity' | 'pták-nizko' | 'pták-vysoko';
+export type ObstacleKind =
+  | 'ker-maly' | 'ker-velky' | 'ker-trojity'
+  | 'pták-nizko' | 'pták-vysoko'
+  | 'kamen' | 'plot' | 'vetev';
 
 export interface Obstacle {
   kind: ObstacleKind;
@@ -80,7 +83,21 @@ const SHAPES: Record<ObstacleKind, { w: number; h: number; y: number }> = {
   'ker-trojity': { w: 58, h: 34, y: GROUND_Y - 34 },
   'pták-nizko': { w: 34, h: 22, y: GROUND_Y - 62 },
   'pták-vysoko': { w: 34, h: 22, y: GROUND_Y - 96 },
+  // Nízký široký kámen: přeskočit jde snadno, ale zabere kus dráhy.
+  kamen: { w: 42, h: 16, y: GROUND_Y - 16 },
+  // Úzký vysoký plot: skok musí sedět načasováním, ne délkou.
+  plot: { w: 12, h: 54, y: GROUND_Y - 54 },
+  // Převislá větev: jediná překážka, která se dá jen podběhnout.
+  vetev: { w: 52, h: 30, y: GROUND_Y - 66 },
 };
+
+/**
+ * Hra odpouští pár pixelů na každé straně lišky.
+ * Bez toho končila hra i při dotyku, který na obrazovce nebyl vidět —
+ * kresba lišky je užší než její obdélník.
+ */
+const HITBOX_INSET_X = fx(4);
+const HITBOX_INSET_Y = fx(3);
 
 export function createBezec(seed: string): BezecGame {
   const rng: Rng = createRng(seed);
@@ -108,8 +125,8 @@ export function createBezec(seed: string): BezecGame {
   const spawnObstacle = (): void => {
     // Ptáci se objeví, až když hra nabere tempo — jinak je hráč nestihne.
     const pool: ObstacleKind[] = toFloat(state.speed) > 6
-      ? ['ker-maly', 'ker-velky', 'ker-trojity', 'pták-nizko', 'pták-vysoko']
-      : ['ker-maly', 'ker-velky', 'ker-trojity'];
+      ? ['ker-maly', 'ker-velky', 'ker-trojity', 'kamen', 'plot', 'vetev', 'pták-nizko', 'pták-vysoko']
+      : ['ker-maly', 'ker-velky', 'ker-trojity', 'kamen', 'plot'];
     const kind = rng.pick(pool);
     const shape = SHAPES[kind];
     state.obstacles.push({
@@ -127,9 +144,10 @@ export function createBezec(seed: string): BezecGame {
   };
 
   const collides = (): boolean => {
-    const top = state.y - foxHeight();
-    const left = FOX_X;
-    const right = fxAdd(FOX_X, FOX_W);
+    const top = fxAdd(state.y - foxHeight(), HITBOX_INSET_Y);
+    const bottom = state.y - HITBOX_INSET_Y;
+    const left = fxAdd(FOX_X, HITBOX_INSET_X);
+    const right = fxAdd(FOX_X, FOX_W) - HITBOX_INSET_X;
 
     for (const obstacle of state.obstacles) {
       const oLeft = obstacle.x;
@@ -137,7 +155,7 @@ export function createBezec(seed: string): BezecGame {
       if (right < oLeft || left > oRight) continue;
       const oTop = obstacle.y;
       const oBottom = fxAdd(obstacle.y, obstacle.h);
-      if (state.y < oTop || top > oBottom) continue;
+      if (bottom < oTop || top > oBottom) continue;
       return true;
     }
     return false;

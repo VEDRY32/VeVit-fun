@@ -116,6 +116,38 @@ function drawObstacle(
     return;
   }
 
+  if (kind === 'kamen') {
+    // Kámen: nízký oblouk s odlomenou hranou.
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.quadraticCurveTo(x + w * 0.18, y, x + w * 0.52, y + h * 0.12);
+    ctx.quadraticCurveTo(x + w * 0.86, y + h * 0.24, x + w, y + h);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+
+  if (kind === 'plot') {
+    // Plot: sloupek se dvěma příčkami.
+    ctx.fillRect(x + w * 0.3, y, w * 0.4, h);
+    ctx.fillRect(x - w * 0.6, y + h * 0.22, w * 2.2, h * 0.12);
+    ctx.fillRect(x - w * 0.6, y + h * 0.55, w * 2.2, h * 0.12);
+    return;
+  }
+
+  if (kind === 'vetev') {
+    // Převislá větev: kmen mimo obraz, listy visí dolů.
+    ctx.fillRect(x, y, w, h * 0.3);
+    for (let i = 0; i < 5; i++) {
+      const lx = x + (i + 0.5) * (w / 5);
+      const ly = y + h * 0.3;
+      ctx.beginPath();
+      ctx.ellipse(lx, ly + h * 0.3, w * 0.09, h * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
   // Keře: svislé výhonky různé výšky.
   const stems = kind === 'ker-trojity' ? 5 : kind === 'ker-velky' ? 3 : 2;
   const stemW = w / (stems * 1.6);
@@ -127,6 +159,27 @@ function drawObstacle(
     ctx.arc(sx + stemW / 2, y + (h - sh), stemW * 0.9, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+/**
+ * Vlnovka kopců v dálce. Tvar je daný vzorcem, ne náhodou — při stejné
+ * vzdálenosti vypadá scéna vždy stejně, takže se dá přehrát replay.
+ */
+function drawHills(
+  ctx: CanvasRenderingContext2D,
+  offset: number, baseY: number, height: number, color: string, wavelength: number,
+): void {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(0, baseY);
+  for (let x = 0; x <= WORLD_W; x += 8) {
+    const t = (x + offset) / wavelength;
+    const y = baseY - height * (0.45 + 0.55 * Math.abs(Math.sin(t) * Math.cos(t * 0.5)));
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(WORLD_W, baseY);
+  ctx.closePath();
+  ctx.fill();
 }
 
 export interface DrawOptions {
@@ -155,6 +208,11 @@ export function drawBezec(
       ctx.fillRect(sx, sy, 2, 2);
     }
   }
+
+  // Vzdálené kopce ve dvou vrstvách — parallax dává rychlosti měřítko.
+  const travelled = game.state.distance / 65536;
+  drawHills(ctx, travelled * 0.12, GROUND_Y, 78, withAlpha(palette.ground, 0.14), 260);
+  drawHills(ctx, travelled * 0.28, GROUND_Y, 46, withAlpha(palette.ground, 0.22), 170);
 
   // Země: čára plus tečky, které ubíhají podle uražené vzdálenosti.
   ctx.strokeStyle = palette.ground;
