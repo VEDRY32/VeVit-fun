@@ -25,6 +25,7 @@ import { manifest as odpal } from '@titles/odpal/src/manifest.js';
 import { manifest as sudoku } from '@titles/sudoku/src/manifest.js';
 import { manifest as kostka } from '@titles/kostka/src/manifest.js';
 import { manifest as lovecUzemi } from '@titles/lovec-uzemi/src/manifest.js';
+import { manifest as superSkokan } from '@titles/super-skokan/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -50,6 +51,7 @@ export const catalog: CatalogEntry[] = [
   { manifest: sudoku, load: () => import('@titles/sudoku/src/index.js') as Promise<GameModule> },
   { manifest: kostka, load: () => import('@titles/kostka/src/index.js') as Promise<GameModule> },
   { manifest: lovecUzemi, load: () => import('@titles/lovec-uzemi/src/index.js') as Promise<GameModule> },
+  { manifest: superSkokan, load: () => import('@titles/super-skokan/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>
