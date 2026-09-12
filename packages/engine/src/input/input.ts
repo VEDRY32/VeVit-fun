@@ -99,6 +99,15 @@ export function createInput(options: InputOptions): InputManager {
   const rawDown = new Set<Action>();
   const virtualDown = new Set<Action>();
   const gamepadDown = new Set<Action>();
+  /**
+   * Stisky, které přišly a skončily mezi dvěma vzorky.
+   *
+   * Logika se vzorkuje 60× za sekundu, ale klávesa nebo tap můžou trvat
+   * kratší dobu než jeden krok — a takový stisk se bez téhle vyrovnávací
+   * paměti ztratil úplně. Projeví se to jako „hra občas nereaguje" u všeho,
+   * co čte hranu stisku: převalení kostky, tah v tahové hře, skok.
+   */
+  const pendingPress = new Set<Action>();
 
   let current = 0;
   let previous = 0;
@@ -124,7 +133,10 @@ export function createInput(options: InputOptions): InputManager {
     if (hit.length === 0) return;
     // Šipky a mezerník by jinak scrollovaly stránku pod hrou.
     e.preventDefault();
-    for (const a of hit) rawDown.add(a);
+    for (const a of hit) {
+      rawDown.add(a);
+      pendingPress.add(a);
+    }
   };
 
   const onKeyUp = (e: KeyboardEvent): void => {
@@ -141,6 +153,7 @@ export function createInput(options: InputOptions): InputManager {
     rawDown.clear();
     virtualDown.clear();
     gamepadDown.clear();
+    pendingPress.clear();
     pointerDownRaw = false;
     pointerPressedRaw = false;
     pointerReleasedRaw = false;
@@ -255,7 +268,8 @@ export function createInput(options: InputOptions): InputManager {
       previous = current;
       let mask = 0;
       for (const action of ACTIONS) {
-        const down = rawDown.has(action) || virtualDown.has(action) || gamepadDown.has(action);
+        const down = rawDown.has(action) || virtualDown.has(action)
+          || gamepadDown.has(action) || pendingPress.has(action);
         if (down) {
           mask |= bit(action);
           heldFor.set(action, (heldFor.get(action) ?? 0) + 1);
@@ -265,6 +279,8 @@ export function createInput(options: InputOptions): InputManager {
         }
       }
       current = mask;
+
+      pendingPress.clear();
 
       pointer.pressed = pointerPressedRaw;
       pointer.released = pointerReleasedRaw;
@@ -284,8 +300,12 @@ export function createInput(options: InputOptions): InputManager {
     getKeymap: () => ({ ...keymap }),
 
     setVirtual(action, down) {
-      if (down) virtualDown.add(action);
-      else virtualDown.delete(action);
+      if (down) {
+        virtualDown.add(action);
+        pendingPress.add(action);
+      } else {
+        virtualDown.delete(action);
+      }
     },
 
     reset() {

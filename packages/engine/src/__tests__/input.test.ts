@@ -42,6 +42,27 @@ describe('createInput', () => {
     expect(input.held('left')).toBe(true);
   });
 
+  it('nepropadne stisk kratší než jeden krok logiky', () => {
+    // Klávesa stisknutá a puštěná mezi dvěma vzorky se dřív ztratila celá:
+    // hra pak „občas nereagovala" na rychlé ťuknutí.
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowRight' }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowRight' }));
+    input.sample();
+    expect(input.pressed('right')).toBe(true);
+
+    // A trvá právě jeden krok, ne déle.
+    input.sample();
+    expect(input.held('right')).toBe(false);
+    expect(input.released('right')).toBe(true);
+  });
+
+  it('stejně ošetří i tlačítko z dotykového overlay', () => {
+    input.setVirtual('a', true);
+    input.setVirtual('a', false);
+    input.sample();
+    expect(input.pressed('a')).toBe(true);
+  });
+
   it('nechá klávesy poli formuláře', () => {
     const field = document.createElement('input');
     document.body.appendChild(field);

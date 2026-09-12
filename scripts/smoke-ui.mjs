@@ -15,7 +15,7 @@ const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173';
 const OUT = process.env.SHOT_DIR ?? resolve(process.cwd(), 'screenshots');
 const GAMES = [
   'kostkopad', 'petipismenka', 'zdvojka', 'had', 'hledac-min', 'pasiansy',
-  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec', 'piskvorky', 'odpal', 'sudoku',
+  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec', 'piskvorky', 'odpal', 'sudoku', 'kostka',
 ];
 
 const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX', 'KeyZ', 'KeyC'];

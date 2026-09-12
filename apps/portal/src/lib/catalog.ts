@@ -23,6 +23,7 @@ import { manifest as bezec } from '@titles/bezec/src/manifest.js';
 import { manifest as piskvorky } from '@titles/piskvorky/src/manifest.js';
 import { manifest as odpal } from '@titles/odpal/src/manifest.js';
 import { manifest as sudoku } from '@titles/sudoku/src/manifest.js';
+import { manifest as kostka } from '@titles/kostka/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -46,6 +47,7 @@ export const catalog: CatalogEntry[] = [
   { manifest: piskvorky, load: () => import('@titles/piskvorky/src/index.js') as Promise<GameModule> },
   { manifest: odpal, load: () => import('@titles/odpal/src/index.js') as Promise<GameModule> },
   { manifest: sudoku, load: () => import('@titles/sudoku/src/index.js') as Promise<GameModule> },
+  { manifest: kostka, load: () => import('@titles/kostka/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>
