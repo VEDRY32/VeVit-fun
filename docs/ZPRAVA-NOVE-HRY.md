@@ -147,11 +147,19 @@ Každá nová hra:
 - má nápovědu ovládání a — kde to dává smysl — dotykový overlay,
 - je vlastní chunk, který se stahuje až při spuštění.
 
-**Co za pozornost stojí:** hry s mířením myší (Poslední obrana, Průchody,
-Pouliční bitka částečně) mají stejné omezení jako starší Cihlobijec —
-replay zaznamenává jen bitovou masku akcí, ne polohu ukazatele. Server
-proto u nich běh nepřehraje do posledního pixelu. Není to chyba, kterou
-bych zavedl, ale jediné místo, kde nové hry nedosahují na plnou serverovou
-validaci skóre. Opravit to znamená rozšířit formát replaye o polohu
-ukazatele — to je zásah do sdíleného formátu a nechávám ho na rozhodnutí,
-jestli se do toho má jít.
+**Co za pozornost stojí — serverová validace skóre.** Server umí přehrát
+replay zatím jen u Kostkopádu (`packages/rules/src/validate.ts`); u všech
+ostatních her, starých i nových, vrací validace `unsupported`. Nové hry to
+tedy nezhoršují, ale ani neposouvají.
+
+Osm z jedenácti nových her je deterministických a ovládaných klávesnicí,
+takže by šlo přehrát: Kostka, Lovec území, Super skokan, Útěk, Nájezdník,
+Oheň a Voda, Panáčci a Šťastná opice. Chybí jim jen headless smyčka ve
+validátoru — to je práce na jednu hru zvlášť a do zadání nepatřila.
+
+Tři hry to mít nebudou bez změny formátu replaye: Poslední obrana míří
+myší, Průchody pokládají průchody klikem a Pouliční bitka má myš jako
+alternativu. Replay zaznamenává jen bitovou masku akcí, ne polohu
+ukazatele. Rozšířit formát je zásah do něčeho sdíleného a nechávám ho na
+rozhodnutí, jestli se do toho má jít — stejné omezení má i starší
+Cihlobijec.

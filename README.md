@@ -23,6 +23,7 @@ pnpm typecheck
 | `apps/worker` | cron: denní výzvy, přepočty, slovníky, zálohy |
 | `packages/engine` | herní smyčka, vstup, audio, RNG, render utility |
 | `packages/rules` | čistá deterministická logika sdílená klientem a serverem |
+| `packages/rules/platform` | plošinovková fyzika sdílená hrami z boku |
 | `packages/ui` | komponenty portálu a design tokeny |
 | `packages/net` | binární protokol a klient pro realtime |
 | `titles/<slug>` | jednotlivé hry |
@@ -35,6 +36,8 @@ pnpm typecheck
 - [PROGRESS.md](PROGRESS.md) — co je hotové a co ne
 - [THIRD_PARTY.md](THIRD_PARTY.md) — licence třetích stran
 - [ops/RUNBOOK.md](ops/RUNBOOK.md) — provoz
+- [docs/ZPRAVA-OPRAVY.md](docs/ZPRAVA-OPRAVY.md) — velká vlna oprav: příčiny a co se z nich opravilo
+- [docs/ZPRAVA-NOVE-HRY.md](docs/ZPRAVA-NOVE-HRY.md) — jedenáct her ve stylu flashové éry
 
 ## Pravidla, která se neporušují
 
