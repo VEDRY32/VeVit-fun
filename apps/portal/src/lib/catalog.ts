@@ -29,6 +29,7 @@ import { manifest as superSkokan } from '@titles/super-skokan/src/manifest.js';
 import { manifest as utek } from '@titles/utek/src/manifest.js';
 import { manifest as posledniObrana } from '@titles/posledni-obrana/src/manifest.js';
 import { manifest as ohenAVoda } from '@titles/ohen-a-voda/src/manifest.js';
+import { manifest as najezdnik } from '@titles/najezdnik/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -58,6 +59,7 @@ export const catalog: CatalogEntry[] = [
   { manifest: utek, load: () => import('@titles/utek/src/index.js') as Promise<GameModule> },
   { manifest: posledniObrana, load: () => import('@titles/posledni-obrana/src/index.js') as Promise<GameModule> },
   { manifest: ohenAVoda, load: () => import('@titles/ohen-a-voda/src/index.js') as Promise<GameModule> },
+  { manifest: najezdnik, load: () => import('@titles/najezdnik/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>
