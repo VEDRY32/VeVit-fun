@@ -24,7 +24,12 @@ createRoot(container).render(
  * o pásmo s prvním vykreslením. Ve vývoji ho neregistrujeme vůbec —
  * jinak by cachoval kód, který se za minutu změní.
  */
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if (
+  'serviceWorker' in navigator &&
+  import.meta.env.PROD &&
+  // Náhledové sestavení běží pod cizí cestou, kde na `/sw.js` nedosáhneme.
+  import.meta.env.VITE_HASH_ROUTER !== '1'
+) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
       // Bez service workeru portál funguje dál, jen nebude offline.
