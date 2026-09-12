@@ -128,6 +128,17 @@ async function run() {
         continue;
       }
 
+      // Přesně jedna hra, ne dvě. Spuštění hry čeká na modul a na běh ze
+      // serveru; když se dvě spuštění překryla, doběhla obě a namountovala
+      // každé vlastní instanci. Ta přebytečná běžela dál neviditelně, brala
+      // stejné klávesy a po svém dohrání shodila hráči živou partii.
+      // Čekání na plátno výš tohle nechytí — to je spokojené i se dvěma.
+      const instances = await page.locator('.hra__host canvas').count();
+      if (instances !== 1) {
+        failures++;
+        console.error(`✗ ${label} · ${slug}: běží ${instances} instancí hry místo jedné`);
+      }
+
       // Herní plocha se už jednou smrskla na dva pixely kvůli CSS (položka
       // mřížky s auto marginem a absolutně pozicovaným obsahem). Plátno
       // přitom existovalo, takže to samotná kontrola výše nechytila.
