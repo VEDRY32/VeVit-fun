@@ -48,12 +48,19 @@
 
 .hlavicka__hledani input {
   width: 100%;
-  padding: 10px var(--s-md);
+  height: var(--v-prvku);
+  padding: 0 12px;
   border-radius: var(--r-field);
   border: 1px solid var(--linka);
   background: var(--pult);
   color: var(--text);
   font: inherit;
+  transition: border-color var(--prechod);
+}
+
+.hlavicka__hledani input:focus {
+  border-color: var(--zelena);
+  outline: none;
 }
 
 .hlavicka__hledani input::placeholder {
@@ -147,6 +154,7 @@
 .hero__plocha:hover,
 .hero__plocha:focus-visible {
   border-color: var(--akcent);
+  box-shadow: var(--zar-primarni);
 }
 
 .hero__plocha canvas {
@@ -163,7 +171,14 @@
   flex-direction: column;
   gap: var(--s-xs);
   padding: var(--s-lg);
-  background: linear-gradient(to top, rgba(15, 28, 63, 0.95), transparent);
+  /* Popisek leží na ukázce hry, která může být světlá i tmavá — přechod
+     proto musí být dost hustý, aby text zůstal čitelný vždycky. */
+  background: linear-gradient(
+    to top,
+    rgba(8, 9, 12, 0.96) 0%,
+    rgba(8, 9, 12, 0.86) 45%,
+    transparent 100%
+  );
 }
 
 .hero__stitek {
@@ -305,14 +320,15 @@
   overflow: hidden;
   background: var(--pult);
   border: 1px solid var(--linka);
-  transition: border-color var(--prechod), transform var(--prechod);
-  /* Zkosený roh — tvar herní kazety. */
+  transition: border-color var(--prechod), transform var(--prechod), background var(--prechod);
+  /* Zkosený roh — tvar herní kazety. Ořezává i stín, proto tu záře není. */
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
 
 .dlazdice__odkaz:hover,
 .dlazdice__odkaz:focus-visible {
   border-color: var(--akcent);
+  background: var(--pult-svetly);
   transform: translateY(-2px);
 }
 
@@ -377,7 +393,7 @@
   height: 34px;
   border-radius: 50%;
   border: 0;
-  background: rgba(15, 28, 63, 0.7);
+  background: rgba(8, 9, 12, 0.7);
   color: var(--text);
   display: grid;
   place-items: center;
@@ -639,7 +655,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: rgba(15, 28, 63, 0.82);
+  background: rgba(8, 9, 12, 0.82);
   border: 1px solid var(--linka);
   border-radius: var(--r-button);
   font-size: 12px;
@@ -662,8 +678,8 @@
   transform: translate(-50%, -50%);
   pointer-events: auto;
   border-radius: 50%;
-  border: 1.5px solid rgba(238, 242, 255, 0.35);
-  background: rgba(23, 42, 87, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  background: rgba(24, 27, 33, 0.55);
   color: var(--text);
   font-size: 15px;
   display: grid;
@@ -676,7 +692,7 @@
 }
 
 .dotyk__tlacitko:active {
-  background: rgba(47, 210, 122, 0.35);
+  background: rgba(16, 185, 129, 0.35);
 }
 
 /* Na zařízení s myší dotykový overlay nepatří. */
@@ -694,7 +710,7 @@
   z-index: 50;
   display: grid;
   place-items: center;
-  background: rgba(15, 28, 63, 0.86);
+  background: rgba(8, 9, 12, 0.86);
   padding: var(--s-md);
 }
 
@@ -720,18 +736,22 @@
 }
 
 .tlacitko {
-  display: inline-block;
-  padding: 11px var(--s-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--v-prvku);
+  padding: 0 var(--s-md);
   border-radius: var(--r-button);
   border: 1px solid var(--linka);
-  background: var(--noc);
+  background: var(--pult);
   color: var(--text);
   text-align: center;
   transition: border-color var(--prechod), background var(--prechod);
 }
 
 .tlacitko:hover {
-  border-color: var(--akcent);
+  background: var(--pult-svetly);
+  border-color: var(--linka-svetla);
 }
 
 .tlacitko--hlavni {
@@ -742,13 +762,49 @@
 }
 
 .tlacitko--hlavni:hover {
-  background: color-mix(in srgb, var(--zelena) 85%, white);
+  background: var(--zelena-tmava);
+  border-color: var(--zelena-tmava);
+}
+
+.tlacitko--hlavni:active {
+  background: var(--zelena-tmavsi);
+  border-color: var(--zelena-tmavsi);
+}
+
+.tlacitko--vedlejsi {
+  background: var(--oranzova);
+  border-color: var(--oranzova);
+  color: var(--noc);
+  font-weight: 600;
+}
+
+.tlacitko--vedlejsi:hover {
+  background: var(--oranzova-tmava);
+  border-color: var(--oranzova-tmava);
+}
+
+.tlacitko--vedlejsi:active {
+  background: var(--oranzova-tmavsi);
+  border-color: var(--oranzova-tmavsi);
 }
 
 .tlacitko--tiche {
   background: none;
   border-color: transparent;
   color: var(--text-tlumeny);
+}
+
+.tlacitko--tiche:hover {
+  background: var(--pult-svetly);
+  border-color: transparent;
+}
+
+.tlacitko[disabled],
+.tlacitko[aria-disabled='true'] {
+  background: var(--pult-svetly);
+  border-color: var(--linka);
+  color: var(--neaktivni);
+  cursor: not-allowed;
 }
 
 .vysledek__skore {

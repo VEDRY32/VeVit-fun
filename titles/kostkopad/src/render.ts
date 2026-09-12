@@ -1,6 +1,6 @@
 /** Vykreslování Kostkopádu. Vlastní vzhled — skleněné dlaždice na tmavém poli. */
 
-import { glassTile, roundRect, withAlpha, centerText, shade, type ParticleSystem } from '@vevit-games/engine';
+import { paleta, herniPaleta, glassTile, roundRect, withAlpha, centerText, shade, type ParticleSystem } from '@vevit-games/engine';
 import {
   COLS, VISIBLE_ROWS, HIDDEN_ROWS, PIECE_COLORS, PIECE_GLYPHS, PIECE_SHAPES,
   type KostkopadGame, type PieceType,
@@ -14,7 +14,7 @@ export const BOARD_Y = 40;
 export const BOARD_W = COLS * CELL;
 export const BOARD_H = VISIBLE_ROWS * CELL;
 
-const GARBAGE_COLOR = '#54608C';
+const GARBAGE_COLOR = herniPaleta.kamen;
 
 export interface RenderTheme {
   accent: string;
@@ -207,7 +207,7 @@ export function renderKostkopad(
   // --- Ukazatel příchozího odpadu (online souboj) ---
   if (state.pendingGarbage > 0) {
     const height = Math.min(BOARD_H, state.pendingGarbage * CELL);
-    ctx.fillStyle = '#FF5F6D';
+    ctx.fillStyle = herniPaleta.cervena;
     ctx.fillRect(BOARD_X - 16, BOARD_Y + BOARD_H - height, 7, height);
   }
 
@@ -244,7 +244,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   if (!ctx) return;
   const { width, height } = canvas;
 
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   ctx.fillRect(0, 0, width, height);
 
   const cols = 10;

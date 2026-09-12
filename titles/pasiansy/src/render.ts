@@ -1,6 +1,6 @@
 /** Vykreslení karet. Vlastní design s velkými indexy, čitelnými i na mobilu. */
 
-import { roundRect, withAlpha, centerText } from '@vevit-games/engine';
+import { paleta, herniPaleta, roundRect, withAlpha, centerText } from '@vevit-games/engine';
 import {
   SUIT_SYMBOLS, RANK_LABELS, isRed,
   type Card, type Pile,
@@ -14,9 +14,11 @@ export const CARD_H = 130;
 export const STACK_FACE_UP = 30;
 export const STACK_FACE_DOWN = 13;
 
-const RED = '#E0566B';
-const BLACK = '#1B2A50';
-const FACE = '#F2F5FF';
+/* Líc karty je světlý, proto na něm musí být inkoust tmavý — herní paleta
+   je laděná na tmavé pozadí, tyhle dvě barvy proto vznikají tady. */
+const RED = '#C2333F';
+const BLACK = '#14161A';
+const FACE = paleta.text;
 
 export interface CardTheme {
   accent: string;
@@ -33,7 +35,7 @@ export function drawCard(
 ): void {
   if (!card.faceUp) {
     // Rub: tmavě modrý pult s jemným motivem VeVit.
-    ctx.fillStyle = '#20356B';
+    ctx.fillStyle = paleta.linka;
     roundRect(ctx, x, y, CARD_W, CARD_H, 9);
     ctx.fill();
     ctx.strokeStyle = withAlpha('#ffffff', 0.12);

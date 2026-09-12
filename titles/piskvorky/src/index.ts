@@ -7,6 +7,7 @@
  */
 
 import {
+  herniPaleta,
   createLoop, createSurface, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -18,8 +19,11 @@ const VIEW_H = 620;
 const HEADER = 56;
 const CELL = 34;
 
+/* Papír a inkoust: hra se hraje na sešitovém papíře, takže její plocha je
+   světlá a barvy z herní palety (laděné na tmavé pozadí) by na ní zmizely.
+   Tyhle čtyři odstíny jsou proto lokální — jinam v portálu nepatří. */
 const PAPER = '#F4F1E6';
-const GRID = '#B9C7DC';
+const GRID = herniPaleta.kamen;
 const INK_X = '#2B4C9B';
 const INK_O = '#C0392F';
 

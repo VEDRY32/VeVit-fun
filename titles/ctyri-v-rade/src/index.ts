@@ -7,6 +7,7 @@
  */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, centerText, withAlpha, shade, easing, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -17,7 +18,7 @@ const VIEW = 620;
 const HEADER = 70;
 const BOARD_PAD = 16;
 
-const PLAYER_COLORS = ['#FFB224', '#FF5F6D'] as const;
+const PLAYER_COLORS = [herniPaleta.zluta, herniPaleta.cervena] as const;
 /** Symbol navíc k barvě pro colorblind režim. */
 const PLAYER_GLYPHS = ['●', '◆'] as const;
 
@@ -44,7 +45,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const cell = Math.min(width / (CTYRI_COLS + 0.5), height / (CTYRI_ROWS + 0.5));
@@ -53,7 +54,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const originX = (width - boardW) / 2;
   const originY = (height - boardH) / 2;
 
-  c.fillStyle = '#1B2A55';
+  c.fillStyle = paleta.pultSvetly;
   c.fillRect(originX, originY, boardW, boardH);
 
   // Deska se plní a zase vyprazdňuje — deterministicky podle času.
@@ -67,7 +68,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       c.arc(x, y, cell * 0.38, 0, Math.PI * 2);
       c.fillStyle = order < filled
         ? PLAYER_COLORS[(col + row) % 2]!
-        : '#0F1C3F';
+        : paleta.noc;
       c.fill();
     }
   }
@@ -170,7 +171,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     }
 
     // Deska: modrý blok s vyříznutými kruhy.
-    c.fillStyle = '#1B2A55';
+    c.fillStyle = paleta.pultSvetly;
     c.fillRect(originX, originY, boardW, boardH);
 
     for (let col = 0; col < CTYRI_COLS; col++) {
@@ -194,7 +195,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
         if (ctx.theme.colorblind) {
           centerText(c, PLAYER_GLYPHS[index]!, x, y,
-            `600 ${Math.round(cell * 0.3)}px system-ui, sans-serif`, '#0F1C3F');
+            `600 ${Math.round(cell * 0.3)}px system-ui, sans-serif`, paleta.noc);
         }
       }
     }

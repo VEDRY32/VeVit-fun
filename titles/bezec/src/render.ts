@@ -5,7 +5,7 @@
  * `mount` a nepotřebuje herní kontext — jen stav a barvy.
  */
 
-import { withAlpha } from '@vevit-games/engine';
+import { paleta, herniPaleta, withAlpha } from '@vevit-games/engine';
 import { GROUND_Y, WORLD_W, WORLD_H, type BezecGame, type ObstacleKind } from '@vevit-games/rules/bezec';
 
 export interface BezecPalette {
@@ -17,10 +17,10 @@ export interface BezecPalette {
 }
 
 export const DAY: BezecPalette = {
-  sky: '#0F1C3F', ground: '#A3B1D6', fox: '#FFB224', obstacle: '#5FD9A0', text: '#EEF2FF',
+  sky: paleta.noc, ground: paleta.textTlumeny, fox: herniPaleta.zluta, obstacle: herniPaleta.zelena, text: paleta.text,
 };
 export const NIGHT: BezecPalette = {
-  sky: '#050A1C', ground: '#4A5680', fox: '#FFD98A', obstacle: '#2E8F63', text: '#A3B1D6',
+  sky: paleta.noc, ground: paleta.textPotichu, fox: herniPaleta.zluta, obstacle: herniPaleta.zelena, text: paleta.textTlumeny,
 };
 
 /** Lineární přechod dvou barev — plynulý cyklus dne a noci. */
@@ -91,7 +91,7 @@ function drawFox(
   ctx.lineTo(x + w * 0.62 + swing, y + h);
   ctx.stroke();
 
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   ctx.beginPath();
   ctx.arc(headX + h * 0.06, headY - h * 0.03, h * 0.045, 0, Math.PI * 2);
   ctx.fill();

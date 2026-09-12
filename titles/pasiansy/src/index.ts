@@ -6,6 +6,7 @@
  */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule,
 } from '@vevit-games/engine';
@@ -47,12 +48,12 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const theme: CardTheme = {
-    accent: '#E9D8A6', background: '#0F1C3F', surface: '#172A57',
-    text: '#EEF2FF', textMuted: '#A3B1D6', colorblind: false,
+    accent: herniPaleta.zluta, background: paleta.noc, surface: paleta.pult,
+    text: paleta.text, textMuted: paleta.textTlumeny, colorblind: false,
   };
 
   // Vějíř karet, který se pomalu rozevírá — klidná, karetní ukázka.

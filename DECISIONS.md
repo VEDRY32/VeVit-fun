@@ -203,3 +203,34 @@ zůstane jako záchranná síť v CI.
 
 **Co skript odhalil hned při zavedení:** Pasiánsy si při stisku ukládaly
 `performance.now()` do pole, které se nikdy nečetlo.
+
+## D-015 — Design tokeny: téměř černá, smaragd, oranžová, Inter
+
+**Stav:** přijato
+
+**Kontext:** zadání portálu uvádělo tmavomodrou paletu výslovně jako fallback
+(„pokud monorepo obsahuje brand tokeny VeVit, použij je"). Zadavatel dodal
+brand tokeny VeVit Games: pozadí `#08090C`, povrch `#111318`, primární
+`#10B981`, sekundární `#F97316`, písmo Inter, škála odsazení po 4 px,
+rádiusy 6/8/12/16 a specifikace tlačítka, pole a karty.
+
+**Rozhodnutí:** tokeny se přebírají jako závazné. Tmavomodrá paleta
+(`#0F1C3F` a spol.) z repa mizí úplně, včetně hardcodovaných hexů ve hrách.
+
+**Důsledky:**
+- Zdrojem pravdy pro barvy je `packages/engine/src/render/palette.ts`.
+  Leží v enginu, protože hry v `titles/` na `@vevit-games/ui` nezávisí —
+  kdyby si paleta žila v UI, hry by si dál psaly vlastní hexy a rozjely by se
+  při každé změně tokenů. `@vevit-games/ui` paletu jen přebaluje do tokenů.
+- `packages/ui/src/styles/tokens.css` je CSS zrcadlo palety. Shodu obou míst
+  a kontrast podle WCAG AA hlídá `packages/ui/src/__tests__/tokeny.test.ts`,
+  aby se rozjetí poznalo v CI, ne na produkci.
+- Barvy kategorií jsou přeladěné pro téměř černé pozadí a všechny drží
+  kontrast ≥ 4,5:1. `textMuted` (`#71717A`) na to nedosahuje (4,1:1), používá
+  se proto jen pro velký nebo nepodstatný text — test to drží na AA large.
+- Písma Bricolage Grotesque, Atkinson Hyperlegible Next a Pixelify Sans
+  nahradilo jediné Inter. Stažená písma klesla z ~300 kB na 133 kB.
+- Dvě výjimky z palety jsou v kódu okomentované: Piškvorky kreslí na papír
+  a Pasiáns na líc karty, tedy na světlý podklad, na kterém jsou herní
+  odstíny (laděné na tmu) nečitelné.
+

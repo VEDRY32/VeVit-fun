@@ -229,6 +229,19 @@ nápověda, která vysvětlí použitou techniku a nejdřív opraví špatně za
 19. Ukázka Hada se v hero pruhu 960×540 kreslila na mřížce 12×8, takže
     z hada byl nečitelný zelený válec; mřížka je teď 24×14.
 
+### Přechod na brand tokeny VeVit Games (D-015)
+
+Zadavatel dodal brand tokeny, které původní zadání předpokládalo jako
+možnost — tmavomodrá paleta byla jen fallback. Portál je teď téměř černý
+(`#08090C`) se smaragdovou primární a oranžovou sekundární barvou a jediným
+písmem Inter.
+
+Podstatná část práce nebyla v přebarvení rozhraní, ale v tom, že si 16 her
+psalo barvy jako hexy přímo v kódu — 90 výskytů ve 22 souborech. Zdrojem
+pravdy je proto nově `packages/engine/src/render/palette.ts`; hry i UI čtou
+ze stejného místa a test `packages/ui/src/__tests__/tokeny.test.ts` hlídá
+shodu s CSS proměnnými i kontrast podle WCAG AA.
+
 ### Stav katalogu
 
 Hotovo 16 z 57 her:

@@ -1,6 +1,7 @@
 /** Hledač min — moderní vyvýšené dlaždice, čísla v paletě ověřené pro barvoslepé. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha, shade,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -16,8 +17,8 @@ const HEADER = 56;
  * i světlostí, takže jsou rozlišitelné i při poruše barvocitu.
  */
 const NUMBER_COLORS = [
-  '', '#8FA6FF', '#5FD9A0', '#FF9F45', '#C77DFF',
-  '#FF6B81', '#4FD1E8', '#EEF2FF', '#A3B1D6',
+  '', herniPaleta.indigo, herniPaleta.zelena, herniPaleta.oranzova, herniPaleta.fialova,
+  herniPaleta.ruzova, herniPaleta.tyrkys, paleta.text, paleta.textTlumeny,
 ];
 
 const CONFIGS: Record<string, Partial<HledacConfig>> = {
@@ -49,7 +50,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const cols = 9;
@@ -69,7 +70,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       const dim = cell - 3;
 
       if (revealed) {
-        c.fillStyle = '#132349';
+        c.fillStyle = paleta.pult;
         roundRect(c, px, py, dim, dim, 3);
         c.fill();
         const noise = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
@@ -82,7 +83,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
           );
         }
       } else {
-        c.fillStyle = '#24396E';
+        c.fillStyle = paleta.linka;
         roundRect(c, px, py, dim, dim, 3);
         c.fill();
       }
@@ -169,7 +170,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         const inset = 1;
 
         if (state === 'revealed') {
-          c.fillStyle = game.state.explodedAt === index ? '#FF5F6D' : shade(ctx.theme.background, 0.06);
+          c.fillStyle = game.state.explodedAt === index ? herniPaleta.cervena : shade(ctx.theme.background, 0.06);
           roundRect(c, px + inset, py + inset, cell - inset * 2, cell - inset * 2, 3);
           c.fill();
 

@@ -1,6 +1,7 @@
 /** Cihlobijec — pádlo se ovládá myší, dotykem i klávesnicí. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createParticles, createRng,
   roundRect, centerText, withAlpha, shade,
   type GameContext, type GameInstance, type GameModule, type Keymap,
@@ -12,8 +13,8 @@ import {
 import { manifest } from './manifest.js';
 
 /** Barva cihly podle zbývajících vrstev; nerozbitná má vlastní odstín. */
-const LAYER_COLORS = ['#4FD1E8', '#5FD9A0', '#FFB224'];
-const SOLID_COLOR = '#54608C';
+const LAYER_COLORS = [herniPaleta.tyrkys, herniPaleta.zelena, herniPaleta.zluta];
+const SOLID_COLOR = herniPaleta.kamen;
 
 const POWERUP_LABELS: Record<PowerupKind, string> = {
   'siroke-padlo': 'Š',
@@ -25,12 +26,12 @@ const POWERUP_LABELS: Record<PowerupKind, string> = {
 };
 
 const POWERUP_COLORS: Record<PowerupKind, string> = {
-  'siroke-padlo': '#5FD9A0',
-  'vic-micku': '#8FA6FF',
-  laser: '#FF6B81',
-  lepidlo: '#E9D8A6',
-  zpomaleni: '#4FD1E8',
-  prurazny: '#C77DFF',
+  'siroke-padlo': herniPaleta.zelena,
+  'vic-micku': herniPaleta.indigo,
+  laser: herniPaleta.ruzova,
+  lepidlo: herniPaleta.zluta,
+  zpomaleni: herniPaleta.tyrkys,
+  prurazny: herniPaleta.fialova,
 };
 
 export { manifest };
@@ -51,7 +52,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const scale = Math.min(width / FIELD_W, height / FIELD_H);
@@ -74,12 +75,12 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   }
 
   const paddleX = FIELD_W / 2 + Math.sin(t * 1.6) * 120;
-  c.fillStyle = '#EEF2FF';
+  c.fillStyle = paleta.text;
   roundRect(c, paddleX - 44, PADDLE_Y, 88, PADDLE_H, 6);
   c.fill();
 
   const ballY = 300 + Math.sin(t * 3.1) * 160;
-  c.fillStyle = '#FFB224';
+  c.fillStyle = herniPaleta.zluta;
   c.beginPath();
   c.arc(paddleX + Math.cos(t * 3.1) * 90, ballY, BALL_RADIUS, 0, Math.PI * 2);
   c.fill();
@@ -156,7 +157,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
       if (brick.powerup) {
         centerText(c, POWERUP_LABELS[brick.powerup], x + BRICK_W / 2, y + BRICK_H / 2,
-          '700 11px system-ui, sans-serif', '#0F1C3F');
+          '700 11px system-ui, sans-serif', paleta.noc);
       }
     }
 
@@ -167,11 +168,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       roundRect(c, powerup.x - 13, powerup.y - 9, 26, 18, 5);
       c.fill();
       centerText(c, POWERUP_LABELS[powerup.kind], powerup.x, powerup.y,
-        '700 12px system-ui, sans-serif', '#0F1C3F');
+        '700 12px system-ui, sans-serif', paleta.noc);
     }
 
     for (const laser of game.state.lasers) {
-      c.fillStyle = '#FF6B81';
+      c.fillStyle = herniPaleta.ruzova;
       c.fillRect(laser.x - 2, laser.y - 12, 4, 12);
     }
 

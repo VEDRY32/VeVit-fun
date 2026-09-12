@@ -16,24 +16,14 @@ import { resolve } from 'node:path';
 const OUT = resolve(import.meta.dirname, '../apps/portal/public/fonts');
 
 /**
- * Každé písmo má licenci OFL 1.1, která vyžaduje, aby se text licence
+ * Písmo má licenci OFL 1.1, která vyžaduje, aby se text licence
  * šířil spolu se soubory.
  */
 const FONTS = [
   {
-    name: 'BricolageGrotesque',
-    css: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800',
-    license: 'https://raw.githubusercontent.com/ateliertriay/bricolage/main/OFL.txt',
-  },
-  {
-    name: 'AtkinsonHyperlegibleNext',
-    css: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@200..800',
-    license: 'https://raw.githubusercontent.com/googlefonts/atkinson-hyperlegible/main/OFL.txt',
-  },
-  {
-    name: 'PixelifySans',
-    css: 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700',
-    license: 'https://raw.githubusercontent.com/eifetx/Pixelify-Sans/main/OFL.txt',
+    name: 'Inter',
+    css: 'https://fonts.googleapis.com/css2?family=Inter:wght@400..800',
+    license: 'https://raw.githubusercontent.com/rsms/inter/master/LICENSE.txt',
   },
 ];
 
@@ -88,7 +78,7 @@ async function main() {
   const css = faces.map((face) => `@font-face {
   font-family: '${face.family}';
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 400 800;
   font-display: swap;
   src: url('/fonts/${face.file}') format('woff2');${face.range ? `\n  unicode-range: ${face.range};` : ''}
 }`).join('\n\n');

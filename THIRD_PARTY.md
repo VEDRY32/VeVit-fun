@@ -30,12 +30,10 @@ ověřená před použitím. GPL jen jako izolovaný worker s atribucí.
 
 | Písmo | Licence | Použití |
 |---|---|---|
-| Bricolage Grotesque | OFL 1.1 | display |
-| Atkinson Hyperlegible Next | OFL 1.1 | text a UI |
-| Pixelify Sans | OFL 1.1 | HUD retro arkád |
+| Inter | OFL 1.1 | veškerý text portálu (řezy 400–800) |
 
 Self-hostované (D-011), staženo skriptem `scripts/fetch-fonts.mjs` do
-`apps/portal/public/fonts` (300 kB celkem, jen podmnožiny latin a latin-ext).
+`apps/portal/public/fonts` (133 kB celkem, jen podmnožiny latin a latin-ext).
 OFL vyžaduje šíření licence spolu s písmem — texty licencí leží vedle souborů
 jako `OFL-*.txt` a servírují se ze stejné domény.
 

@@ -12,12 +12,14 @@ import { deflateSync } from 'node:zlib';
 
 const OUT = resolve(import.meta.dirname, '../apps/portal/public');
 
-const BACKGROUND = [0x0f, 0x1c, 0x3f];
+// Barvy odpovídají tokenům (D-015): pozadí `noc`, dlaždice `original`,
+// `logika`, `arkady` a `akce` — stejná čtveřice jako logo v hlavičce.
+const BACKGROUND = [0x08, 0x09, 0x0c];
 const TILES = [
-  { color: [0x2f, 0xd2, 0x7a] },
-  { color: [0x8f, 0xa6, 0xff] },
-  { color: [0xff, 0xb2, 0x24] },
-  { color: [0xff, 0x5f, 0x6d] },
+  { color: [0x10, 0xb9, 0x81] },
+  { color: [0x81, 0x8c, 0xf8] },
+  { color: [0xf9, 0x73, 0x16] },
+  { color: [0xf4, 0x3f, 0x5e] },
 ];
 
 function crc32(buffer) {

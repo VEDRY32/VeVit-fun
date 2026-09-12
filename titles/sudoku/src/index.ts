@@ -7,6 +7,7 @@
  */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -48,7 +49,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const size = Math.min(width, height) * 0.9;
@@ -56,7 +57,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const originX = (width - size) / 2;
   const originY = (height - size) / 2;
 
-  c.fillStyle = '#172A57';
+  c.fillStyle = paleta.pult;
   roundRect(c, originX, originY, size, size, 8);
   c.fill();
 
@@ -84,7 +85,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       originX + (index % SIZE + 0.5) * cell,
       originY + (Math.floor(index / SIZE) + 0.5) * cell,
       `500 ${Math.round(cell * 0.55)}px system-ui, sans-serif`,
-      noise < 0.35 ? '#EEF2FF' : '#8FA6FF',
+      noise < 0.35 ? paleta.text : herniPaleta.indigo,
     );
   }
 }
@@ -248,11 +249,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.fillRect(x, y, CELL, CELL);
 
       if (conflicts.has(index)) {
-        c.fillStyle = withAlpha('#FF5F6D', 0.28);
+        c.fillStyle = withAlpha(herniPaleta.cervena, 0.28);
         c.fillRect(x, y, CELL, CELL);
       }
       if (index === hintCell && hintTicks > 0) {
-        c.strokeStyle = '#2FD27A';
+        c.strokeStyle = paleta.zelena;
         c.lineWidth = 2.5;
         c.strokeRect(x + 1.5, y + 1.5, CELL - 3, CELL - 3);
       }
@@ -283,7 +284,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         centerText(
           c, String(value), x + CELL / 2, y + CELL / 2,
           `${given ? '700' : '500'} ${Math.round(CELL * 0.56)}px system-ui, sans-serif`,
-          wrong ? '#FF5F6D' : given ? ctx.theme.text : ctx.theme.accent,
+          wrong ? herniPaleta.cervena : given ? ctx.theme.text : ctx.theme.accent,
         );
         continue;
       }
@@ -330,7 +331,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     // Vysvětlení nápovědy pod číselníkem.
     if (hintTicks > 0 && hintText) {
       centerText(c, hintText, VIEW_W / 2, PAD_Y + PAD_H + 22,
-        '500 13px system-ui, sans-serif', '#2FD27A');
+        '500 13px system-ui, sans-serif', paleta.zelena);
     }
 
     if (game.state.solved) {

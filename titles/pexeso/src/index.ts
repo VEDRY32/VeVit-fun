@@ -1,6 +1,7 @@
 /** Pexeso — 3D otočení karty, vlastní vektorové ilustrace. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -13,7 +14,7 @@ const VIEW_H = 680;
 const HEADER = 64;
 
 /** Barvy motivů — dost odlišné i pro poruchy barvocitu. */
-const MOTIF_COLORS = ['#8FA6FF', '#5FD9A0', '#FFB224', '#FF6B81', '#C77DFF', '#4FD1E8', '#E9D8A6', '#35E0CF'];
+const MOTIF_COLORS = [herniPaleta.indigo, herniPaleta.zelena, herniPaleta.zluta, herniPaleta.ruzova, herniPaleta.fialova, herniPaleta.tyrkys, herniPaleta.zluta, herniPaleta.tyrkys];
 
 const MODE_CONFIG: Record<string, Partial<PexesoConfig>> = {
   mala: { rows: 4, cols: 4 },
@@ -39,7 +40,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const cols = 4;
@@ -65,7 +66,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       c.save();
       c.translate(x + size / 2, y + size / 2);
       c.scale(Math.max(0.04, scaleX), 1);
-      c.fillStyle = faceUp ? '#F2F5FF' : '#20356B';
+      c.fillStyle = faceUp ? paleta.text : paleta.linka;
       roundRect(c, -size / 2, -size / 2, size, size, 7);
       c.fill();
       if (faceUp) {
@@ -177,7 +178,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.scale(scaleX, 1);
 
       if (showFace) {
-        c.fillStyle = card.matched ? withAlpha('#F2F5FF', 0.55) : '#F2F5FF';
+        c.fillStyle = card.matched ? withAlpha(paleta.text, 0.55) : paleta.text;
         roundRect(c, -size / 2, -size / 2, size, size, 8);
         c.fill();
         drawMotif(c, card.motif, -size / 2, -size / 2, size, colorFor(card.motif));

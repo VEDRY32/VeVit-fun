@@ -1,6 +1,7 @@
 /** Zdvojka — vykreslení a napojení pravidel na engine. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createReplayRecorder, roundRect, centerText,
   withAlpha, easing, clamp01,
   type GameContext, type GameInstance, type GameModule, type Keymap,
@@ -13,14 +14,21 @@ const VIEW_H = 560;
 const BOARD_PAD = 12;
 const BOARD_TOP = 120;
 
-/** Vlastní škála od studené k teplé — vyšší číslo, teplejší dlaždice. */
+/**
+ * Škála od studené k teplé — vyšší číslo, teplejší dlaždice.
+ * Hodnoty do 64 jsou tmavé (bílý popisek), od 128 svítivé (tmavý popisek);
+ * hranici drží `LIGHT_FROM` níž, aby text na dlaždici zůstal čitelný.
+ */
 const TILE_COLORS: Record<number, string> = {
-  2: '#5B76C4', 4: '#5E8ED6', 8: '#54A9C9', 16: '#4FC1A4',
-  32: '#7ACC6E', 64: '#B8CC5A', 128: '#E3C355', 256: '#EDA34C',
-  512: '#F0834B', 1024: '#EC6455', 2048: '#E04B78',
+  2: '#1F2937', 4: '#2A323C', 8: '#333C48', 16: herniPaleta.kamen,
+  32: '#4B5563', 64: '#5B6472', 128: herniPaleta.zluta, 256: herniPaleta.oranzova,
+  512: herniPaleta.cervena, 1024: herniPaleta.ruzova, 2048: herniPaleta.zelena,
 };
 
-const colorFor = (value: number): string => TILE_COLORS[value] ?? '#C24BE0';
+/** Od téhle hodnoty výš je dlaždice svítivá a popisek na ní musí být tmavý. */
+const LIGHT_FROM = 128;
+
+const colorFor = (value: number): string => TILE_COLORS[value] ?? herniPaleta.tyrkys;
 
 /** Animace přesunu trvá ~110 ms; při 60 Hz je to sedm kroků. */
 const MOVE_TICKS = 7;
@@ -55,7 +63,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const { width, height } = canvas;
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   ctx.fillRect(0, 0, width, height);
 
   const size = Math.min(width, height) * 0.86;
@@ -63,7 +71,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const originX = (width - size) / 2;
   const originY = (height - size) / 2;
 
-  ctx.fillStyle = '#172A57';
+  ctx.fillStyle = paleta.pult;
   roundRect(ctx, originX - 4, originY - 4, size + 8, size + 8, 10);
   ctx.fill();
 
@@ -82,7 +90,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       centerText(
         ctx, String(value), px + (cell - 6) / 2, py + (cell - 6) / 2,
         `600 ${Math.round(cell * 0.32)}px system-ui, sans-serif`,
-        value > 64 ? '#0F1C3F' : '#EEF2FF',
+        value >= LIGHT_FROM ? paleta.noc : paleta.text,
       );
     }
   }
@@ -197,7 +205,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       centerText(
         c, String(tile.value), px + dim / 2, py + dim / 2,
         `600 ${Math.round(fontSize)}px system-ui, sans-serif`,
-        tile.value > 64 ? '#0F1C3F' : '#EEF2FF',
+        tile.value >= LIGHT_FROM ? paleta.noc : paleta.text,
       );
     }
 

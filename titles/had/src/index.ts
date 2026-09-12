@@ -1,6 +1,7 @@
 /** Had — plynulá zaoblená křivka s očima, ne řada čtverců. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createReplayRecorder, withAlpha, centerText,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -87,7 +88,7 @@ function drawSnakeBody(
   ctx.arc((head.x + 0.5) * cell, (head.y + 0.5) * cell, cell * 0.42, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   for (const offset of [-0.16, 0.16]) {
     ctx.beginPath();
     ctx.arc((head.x + 0.5 + offset) * cell, (head.y + 0.42) * cell, cell * 0.09, 0, Math.PI * 2);
@@ -100,7 +101,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   /**
@@ -143,12 +144,12 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   );
 
   const food = perimeter[(head + 20) % perimeter.length]!;
-  c.fillStyle = '#FFB224';
+  c.fillStyle = herniPaleta.zluta;
   c.beginPath();
   c.arc((food.x + 0.5) * cell, (food.y + 0.5) * cell, cell * 0.28, 0, Math.PI * 2);
   c.fill();
 
-  drawSnakeBody(c, body, '#2FD27A', cell);
+  drawSnakeBody(c, body, paleta.zelena, cell);
   c.restore();
 }
 
@@ -219,7 +220,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     c.fill();
 
     if (game.state.golden) {
-      c.fillStyle = '#F4D35E';
+      c.fillStyle = herniPaleta.zluta;
       c.beginPath();
       c.arc(
         (game.state.golden.x + 0.5) * CELL, (game.state.golden.y + 0.5) * CELL,
@@ -227,7 +228,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       );
       c.fill();
       // Ubývající prstenec ukazuje, kolik času zbývá.
-      c.strokeStyle = '#F4D35E';
+      c.strokeStyle = herniPaleta.zluta;
       c.lineWidth = 2;
       c.beginPath();
       c.arc(
@@ -238,7 +239,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.stroke();
     }
 
-    drawSnakeBody(surface.ctx, game.state.body, '#2FD27A', CELL);
+    drawSnakeBody(surface.ctx, game.state.body, paleta.zelena, CELL);
 
     centerText(
       c, String(game.state.score), VIEW / 2, 26,
