@@ -128,6 +128,14 @@ export interface GameContext {
   scores: ScoreApi;
   i18n: I18nApi;
   theme: ThemeContext;
+  /**
+   * Vstup druhého hráče u her pro dva na jedné klávesnici.
+   * Portál ho vytvoří jen tehdy, když to manifest hlásí
+   * (`players.local` a `max >= 2`); ostatní hry ho neuvidí.
+   * Vstup zůstává v rukou portálu — hra si ho nesmí vyrábět sama,
+   * jinak by přestalo fungovat přemapování kláves i dotykový overlay.
+   */
+  input2?: InputManager;
   /** Jen v online režimech. */
   net?: NetApi;
   /** Režim, ve kterém se hra spouští. */

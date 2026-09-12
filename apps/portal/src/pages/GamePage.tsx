@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createAudioBus, createInput, createRng, createStorage, dailySeed,
-  DEFAULT_KEYMAP,
+  DEFAULT_KEYMAP, PLAYER2_KEYMAP,
   type GameEvent, type GameInstance, type GameModule, type Action,
   type InputManager, type Keymap,
 } from '@vevit-games/engine';
@@ -41,6 +41,8 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   // Vstup patří portálu, ne hře: obsluhuje ho i dotykový overlay a nastavení
   // přemapování kláves, které jsou mimo hru.
   const inputRef = useRef<InputManager | null>(null);
+  // Druhá klávesnicová sada pro hry dvou hráčů na jednom počítači.
+  const input2Ref = useRef<InputManager | null>(null);
   const [input, setInput] = useState<InputManager | null>(null);
 
   const [phase, setPhase] = useState<Phase>('loading');
@@ -113,6 +115,8 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     instanceRef.current = null;
     inputRef.current?.destroy();
     inputRef.current = null;
+    input2Ref.current?.destroy();
+    input2Ref.current = null;
     host.replaceChildren();
     setPhase('loading');
     setResult(null);
@@ -185,6 +189,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           // nesmí přebít — jinak by výsledek zmizel pod překryvem pauzy.
           if (phaseRef.current !== 'playing') break;
           inputRef.current?.reset();
+          input2Ref.current?.reset();
           setPhase('paused');
           break;
         case 'score':
@@ -226,8 +231,21 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     inputRef.current = gameInput;
     setInput(gameInput);
 
+    // Hry pro dva na jedné klávesnici dostanou druhou sadu (WASD).
+    const local2P = entry.manifest.players.local && entry.manifest.players.max >= 2;
+    const secondInput = local2P
+      ? createInput({
+        target: host,
+        logicalWidth: entry.manifest.aspect.width,
+        logicalHeight: entry.manifest.aspect.height,
+        keymap: PLAYER2_KEYMAP,
+      })
+      : null;
+    input2Ref.current = secondInput;
+
     instanceRef.current = module.mount(host, {
       input: gameInput,
+      ...(secondInput ? { input2: secondInput } : {}),
       audio,
       rng: createRng(handle.seed),
       storage,
@@ -261,6 +279,8 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
       instanceRef.current = null;
       inputRef.current?.destroy();
       inputRef.current = null;
+      input2Ref.current?.destroy();
+      input2Ref.current = null;
     };
   }, [startGame]);
 
@@ -277,12 +297,14 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     if (phaseRef.current !== 'playing') return;
     instanceRef.current?.pause();
     inputRef.current?.reset();
+    input2Ref.current?.reset();
     setPhase('paused');
   }, []);
 
   const resumeGame = useCallback((): void => {
     if (phaseRef.current !== 'paused') return;
     inputRef.current?.reset();
+    input2Ref.current?.reset();
     instanceRef.current?.resume();
     setPhase('playing');
   }, []);
