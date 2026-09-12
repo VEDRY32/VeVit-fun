@@ -17,6 +17,7 @@ import {
 import { completeChallenge, currentStreak } from '../lib/daily.js';
 import { evaluateBadges, EMPTY_STATS, type Badge } from '../lib/badges.js';
 import { navigate } from '../lib/router.js';
+import { createRunTracker } from '../lib/run-tracker.js';
 import type { I18n } from '../lib/i18n.js';
 
 interface GamePageProps {
@@ -72,6 +73,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     master: settings.master, music: settings.music, sfx: settings.sfx, muted: settings.muted,
   }), []);
 
+  // Hlídá, které spuštění hry je ještě aktuální. Bez něj po sobě překryvná
+  // spuštění nechají běžet osiřelou hru, která pak hráči shodí živou partii.
+  const runTracker = useMemo(() => createRunTracker(), []);
+
   const manifest = entry?.manifest;
   const modeSpec = manifest?.modes.find((m) => m.id === mode);
   const accent = manifest ? categoryColors[manifest.category] : colors.zelena;
@@ -111,6 +116,11 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     const host = hostRef.current;
     if (!entry || !host) return;
 
+    // Doběhnout smí jen poslední spuštění. Mezi úklidem staré hry a `mount()`
+    // se čeká na herní modul a na běh ze serveru; kdyby se za tu dobu spustila
+    // hra znovu, namountovaly by se dvě a ta přebytečná by běžela dál.
+    const run = runTracker.begin();
+
     instanceRef.current?.destroy();
     instanceRef.current = null;
     inputRef.current?.destroy();
@@ -128,9 +138,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
       module = moduleRef.current ?? (await entry.load());
       moduleRef.current = module;
     } catch {
-      setPhase('error');
+      if (run.current) setPhase('error');
       return;
     }
+    if (!run.current) return;
 
     const storage = createStorage({
       gameSlug: entry.manifest.slug,
@@ -145,6 +156,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     const handle = mode === 'denni'
       ? { runId: null, seed: dailySeed(entry.manifest.slug, pragueToday()) }
       : await scores.start(mode);
+    if (!run.current) return;
 
     /**
      * Po dohrané partii se zapíše denní výzva, přepočítají odznaky
@@ -180,6 +192,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     };
 
     const onEvent = (event: GameEvent): void => {
+      // Pojistka: nahrazený běh do portálu nemluví. Jeho `gameover` by jinak
+      // ukončil partii, kterou hráč právě hraje.
+      if (!run.current) return;
       switch (event.type) {
         case 'started':
           setPhase('playing');
@@ -268,13 +283,16 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
 
     recordPlayed(entry.manifest.slug);
   }, [
-    entry, mode, audio, i18n,
+    entry, mode, audio, i18n, runTracker,
     settings.reducedMotion, settings.colorblind, settings.lowQuality, settings.keymap,
   ]);
 
   useEffect(() => {
     void startGame();
     return () => {
+      // Zruší i spuštění, které je zrovna na půl cesty — jinak by domountovalo
+      // hru, kterou už nikdo neuklidí.
+      runTracker.cancel();
       instanceRef.current?.destroy();
       instanceRef.current = null;
       inputRef.current?.destroy();
@@ -282,7 +300,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
       input2Ref.current?.destroy();
       input2Ref.current = null;
     };
-  }, [startGame]);
+  }, [startGame, runTracker]);
 
   // Zvuková sběrnice drží AudioContext. Bez úklidu by po pár přechodech
   // mezi hrami narazila na limit prohlížeče a zvuk by přestal hrát.
