@@ -70,7 +70,7 @@ function drawHero(ctx: CanvasRenderingContext2D, hero: Hero, phase: number): voi
 
 function drawTile(
   ctx: CanvasRenderingContext2D, char: string, x: number, y: number,
-  gateOpen: boolean, accent: string, phase: number,
+  gateOpen: boolean, phase: number,
 ): void {
   switch (char) {
     case '#':
@@ -132,7 +132,6 @@ function drawTile(
       break;
     }
     default:
-      void accent;
       break;
   }
 }
@@ -150,13 +149,13 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
 
   const groundY = VIEW_H - TILE * 2;
   for (let x = 0; x < width / scale + TILE; x += TILE) {
-    drawTile(c, '#', x, groundY + TILE, false, paleta.zelena, t * 60);
+    drawTile(c, '#', x, groundY + TILE, false, t * 60);
   }
   for (let x = TILE * 4; x < TILE * 7; x += TILE) {
-    drawTile(c, 'f', x, groundY, false, paleta.zelena, t * 60);
+    drawTile(c, 'f', x, groundY, false, t * 60);
   }
   for (let x = TILE * 9; x < TILE * 12; x += TILE) {
-    drawTile(c, 'w', x, groundY, false, paleta.zelena, t * 60);
+    drawTile(c, 'w', x, groundY, false, t * 60);
   }
 
   const hop = Math.abs(Math.sin(t * 2)) * 26;
@@ -216,7 +215,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
     for (let ty = 0; ty < s.height; ty++) {
       for (let tx = 0; tx < s.width; tx++) {
-        drawTile(c, game.charAt(tx, ty), tx * TILE, ty * TILE, s.gateOpen, ctx.theme.accent, s.ticks);
+        drawTile(c, game.charAt(tx, ty), tx * TILE, ty * TILE, s.gateOpen, s.ticks);
       }
     }
 

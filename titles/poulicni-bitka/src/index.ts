@@ -170,7 +170,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   let finished = false;
   let lastScore = 0;
   let lastHealth = game.state.player.health;
-  let lastAttack = 0;
 
   const finish = (): void => {
     if (finished) return;
@@ -261,7 +260,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         const attackBefore = game.state.player.attackTicks;
         game.step(mask);
         if (game.state.player.attackTicks > attackBefore) ctx.audio.play('move');
-        lastAttack = game.state.player.attackTicks;
 
         if (game.state.player.health < lastHealth) ctx.audio.play('hit');
         lastHealth = game.state.player.health;
@@ -290,7 +288,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     resume: () => loop.resume(),
     destroy() {
       loop.stop();
-      void lastAttack;
       surface.destroy();
     },
   };

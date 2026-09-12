@@ -6,7 +6,7 @@ import {
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
 import {
-  createStastnaOpice, SCENE_W, SCENE_H, MESSAGE_TICKS,
+  createStastnaOpice, SCENE_W, SCENE_H,
   type OpiceGame, type Backdrop, type Hotspot,
 } from '@vevit-games/rules/stastna-opice';
 import { manifest } from './manifest.js';
@@ -347,7 +347,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   loop.start();
   ctx.emit({ type: 'ready' });
   ctx.emit({ type: 'started' });
-  void MESSAGE_TICKS;
 
   return {
     pause: () => loop.pause(),

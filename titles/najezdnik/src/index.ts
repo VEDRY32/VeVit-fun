@@ -166,7 +166,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   let finished = false;
   let lastScore = 0;
   let lastHealth = game.state.health;
-  let lastShots = 0;
   let cameraX = 0;
 
   const finish = (): void => {
@@ -286,7 +285,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         game.step(mask);
         const shotsNow = game.state.shots.filter((s) => s.fromPlayer).length;
         if (shotsNow > shotsBefore) ctx.audio.play('move');
-        lastShots = shotsNow;
 
         if (game.state.health < lastHealth) ctx.audio.play('hit');
         lastHealth = game.state.health;
@@ -323,7 +321,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     resume: () => loop.resume(),
     destroy() {
       loop.stop();
-      void lastShots;
       surface.destroy();
     },
   };

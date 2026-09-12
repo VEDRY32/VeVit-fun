@@ -198,14 +198,12 @@ export function createPruchody(seed: string, startLevel = 0): PruchodyGame {
   };
 
   const teleport = (from: 0 | 1): void => {
-    const source = state.portals[from]!;
     const target = state.portals[from === 0 ? 1 : 0];
     if (!target) return;
 
     const speed = Math.hypot(state.ball.vx, state.ball.vy);
     const normal = NORMAL[target.side];
     const mouth = portalMouth(target);
-    void source;
     state.ball.x = mouth.x + normal.x * EXIT_OFFSET;
     state.ball.y = mouth.y + normal.y * EXIT_OFFSET;
     // Hybnost zůstává, mění se jen směr — to je celá pointa hry.
