@@ -37,7 +37,7 @@ portálu má zákaz chráněných názvů označený za nepřekročitelný:
 |---|---|---|
 | Portály | **Průchody** | Portal je zapsaná známka Valve |
 | Vetřelec | **Nájezdník** | český název filmové série Alien |
-| Stick Armies | **Panáčci** | blízko Stick War, které je přímo na seznamu zakázaných názvů |
+| Stick Armies | **Panáčci** | sdílí základ s panáčkovou strategií ze seznamu zakázaných názvů |
 
 Zbylých osm názvů zůstalo beze změny — obecná česká slova žádnou známku
 neporušují. Mechanika ani pocit ze hry se změnou jména nemění. Zapsáno

@@ -265,7 +265,8 @@ Pravidlo je v zadání označené za nepřekročitelné a hlídá ho
 **Kontext:** zadání na jedenáct nových her vyjmenovalo pracovní názvy.
 Tři z nich se opírají o cizí značky: „Portály" (Portal je zapsaná známka
 Valve), „Vetřelec" (český název filmové série Alien) a „Stick Armies"
-(blízko Stick War, které je přímo na seznamu zakázaných názvů).
+(anglický základ sdílí s panáčkovou strategií, která je přímo na seznamu
+zakázaných názvů v zadání).
 
 **Rozhodnutí:** hry dostaly vlastní české názvy. Zbylých osm zůstalo, jak
 je zadání pojmenovalo — obecná česká slova žádnou známku neporušují.
