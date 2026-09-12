@@ -258,3 +258,44 @@ Pravidlo je v zadání označené za nepřekročitelné a hlídá ho
   stačí doplnit nové názvy a upravit `check-ip.mjs`. Do té doby platí
   přísnější varianta.
 
+## D-017 — Názvy nových her
+
+**Stav:** přijato
+
+**Kontext:** zadání na jedenáct nových her vyjmenovalo pracovní názvy.
+Tři z nich se opírají o cizí značky: „Portály" (Portal je zapsaná známka
+Valve), „Vetřelec" (český název filmové série Alien) a „Stick Armies"
+(blízko Stick War, které je přímo na seznamu zakázaných názvů).
+
+**Rozhodnutí:** hry dostaly vlastní české názvy. Zbylých osm zůstalo, jak
+je zadání pojmenovalo — obecná česká slova žádnou známku neporušují.
+
+| Zadání | Název v portálu |
+|---|---|
+| Portály | **Průchody** |
+| Vetřelec | **Nájezdník** |
+| Stick Armies | **Panáčci** |
+
+**Důsledky:** mechanika i pocit ze hry zůstávají, mění se jen jméno.
+Kontrola `scripts/check-ip.mjs` prochází. Ostatní názvy (Oheň a Voda,
+Kostka, Šťastná opice, Lovec území, Super skokan, Útěk, Poslední obrana,
+Pouliční bitka) jsou beze změny.
+
+## D-018 — Sdílená plošinovková fyzika a druhý hráč v kontraktu
+
+**Stav:** přijato
+
+**Kontext:** čtyři z nových her jsou z boku s gravitací a dlaždicovou
+mapou a jedna je pro dva hráče na jedné klávesnici.
+
+**Rozhodnutí:**
+- Fyzika žije v `packages/rules/src/platform`. Kdyby si ji každá hra psala
+  sama, rozejde se v detailech, které hráč cítí — výška skoku, klouzání po
+  stěně, průchod rohem.
+- Druhý vstup je v kontraktu hry jako `GameContext.input2`. Vytváří ho
+  portál, a to jen u her, které v manifestu hlásí lokální hru dvou hráčů.
+
+**Důsledky:** hra si nevyrábí vstup ani fyziku sama. U vstupu je to
+podmínka toho, aby fungovalo přemapování kláves, dotykový overlay
+i nulování stavu při pauze — všechno drží portál.
+
