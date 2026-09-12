@@ -32,6 +32,7 @@ import { manifest as ohenAVoda } from '@titles/ohen-a-voda/src/manifest.js';
 import { manifest as najezdnik } from '@titles/najezdnik/src/manifest.js';
 import { manifest as stastnaOpice } from '@titles/stastna-opice/src/manifest.js';
 import { manifest as pruchody } from '@titles/pruchody/src/manifest.js';
+import { manifest as poulicniBitka } from '@titles/poulicni-bitka/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -64,6 +65,7 @@ export const catalog: CatalogEntry[] = [
   { manifest: najezdnik, load: () => import('@titles/najezdnik/src/index.js') as Promise<GameModule> },
   { manifest: stastnaOpice, load: () => import('@titles/stastna-opice/src/index.js') as Promise<GameModule> },
   { manifest: pruchody, load: () => import('@titles/pruchody/src/index.js') as Promise<GameModule> },
+  { manifest: poulicniBitka, load: () => import('@titles/poulicni-bitka/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>
