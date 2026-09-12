@@ -300,3 +300,28 @@ mapou a jedna je pro dva hráče na jedné klávesnici.
 podmínka toho, aby fungovalo přemapování kláves, dotykový overlay
 i nulování stavu při pauze — všechno drží portál.
 
+
+## D-019 — Kuličkodráha přejímá mechaniku z neověřeně licencovaného dema
+
+**Stav:** přijato
+
+**Kontext:** zadavatel poskytl kompletní zdrojový kód dema „Skydreams"
+(Frank Force, JS1024 2026, copyright autora) a požádal o novou hru
+postavenou na jeho mechanice — proceduální generování dráhy s mezerami
+a pseudo-3D projekce. Projekt má v `THIRD_PARTY.md` pravidlo „žádný cizí
+kód/asset bez ověřené licence, každá položka ověřená před použitím".
+Licence tohoto konkrétního dema nebyla ověřena.
+
+**Rozhodnutí:** zadavatel byl na rozpor s pravidlem výslovně upozorněn
+před implementací a riziko vědomě přijal. Algoritmus generování dráhy
+a technika perspektivní projekce jsou adaptované ze zdroje (viz
+`THIRD_PARTY.md`); skoková fyzika je vlastní reinterpretace, ne přepis
+originálu — mění hru z automatického odrazu na běžeckou hru s manuálním
+skokem, o což si zadavatel řekl zvlášť.
+
+**Důsledky:** `scripts/check-ip.mjs` toto neošetří (hlídá jen chráněné
+názvy her, ne provenienci kódu) — kontrola projde bez ohledu na tohle
+rozhodnutí. Pokud se do budoucna zjistí, že licence dema use zakazuje,
+je třeba `packages/rules/src/kulickodraha` a
+`titles/kulickodraha/src/render.ts` přepsat na jinak odvozený algoritmus
+nebo hru z katalogu odebrat.

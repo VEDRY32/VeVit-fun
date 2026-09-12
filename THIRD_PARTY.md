@@ -54,8 +54,15 @@ jako `OFL-*.txt` a servírují se ze stejné domény.
   v patičce hry.
 - **Šachy** — „Šachový engine: Stockfish, GPL-3.0" + odkaz na zdrojový kód.
 
+## Přejatá mechanika (bez ověřené licence)
+
+| Hra | Zdroj | Co je přejaté | Stav licence |
+|---|---|---|---|
+| Kuličkodráha | „Skydreams" — Frank Force, JS1024 2026 (`js1024.fun/demos/2026/25/readme`) | Algoritmus generování dráhy s mezerami a technika pseudo-3D perspektivní projekce | **Neověřená.** Použito na výslovné, informované riziko zadavatele projektu — viz `DECISIONS.md` D-019. Skoková fyzika je vlastní, ne převzatá. |
+
 ## Vlastní obsah (žádná třetí strana)
 
 Veškerá grafika, sprity, úrovně, motivy nonogramů, sady pexesa, postavy Rvačky,
-zvuky a hudba jsou vytvořené v tomto repu procedurálně nebo jako data. Žádný
-asset nepochází z cizí hry.
+zvuky a hudba jsou vytvořené v tomto repu procedurálně nebo jako data. Jedinou
+výjimkou je mechanika Kuličkodráhy zaznamenaná výše — žádný jiný asset ani
+algoritmus nepochází z cizí hry.
