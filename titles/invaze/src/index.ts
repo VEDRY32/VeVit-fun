@@ -257,15 +257,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createInvaze(ctx.seed);
-      particles?.clear();
-      finished = false;
-      lastScore = 0;
-      lastAlive = game.aliveCount();
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.destroy();

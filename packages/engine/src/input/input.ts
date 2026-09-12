@@ -50,6 +50,13 @@ export interface InputManager {
   getKeymap(): Keymap;
   /** Virtuální ovládání z dotykového overlay. */
   setVirtual(action: Action, down: boolean): void;
+  /**
+   * Zahodí celý stav vstupu — držené akce i nevyzvednuté stisky ukazatele.
+   * Volá portál při pauze, pokračování a restartu: bez toho by se stisk,
+   * který padl mimo běžící smyčku, odbavil až v prvním kroku po návratu
+   * a hráč by dostal tah, o který si neřekl.
+   */
+  reset(): void;
   destroy(): void;
   /** Zaznamenané akce pro nápovědu ControlsHint — co už hráč vyzkoušel. */
   readonly usedActions: ReadonlySet<Action>;
@@ -67,6 +74,20 @@ export interface InputOptions {
 }
 
 const DEFAULT_REPEAT: AutoRepeatConfig = { das: 170, arr: 50 };
+
+/**
+ * Píše hráč zrovna do formulářového pole?
+ *
+ * Vstup hry i vlastní posluchače her visí na `window`, aby fungovaly bez
+ * kliknutí do plátna. Klávesy z vyhledávání nebo z jiného pole ale hře
+ * nepatří — bez téhle kontroly je hra spolkne i s `preventDefault`
+ * a do pole se nedá napsat ani mezera.
+ */
+export function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return /^(input|textarea|select)$/i.test(target.tagName);
+}
 
 export function createInput(options: InputOptions): InputManager {
   const keymap: Keymap = { ...DEFAULT_KEYMAP };
@@ -89,6 +110,8 @@ export function createInput(options: InputOptions): InputManager {
   let pointerDownRaw = false;
   let pointerPressedRaw = false;
   let pointerReleasedRaw = false;
+  /** Stisk začal na herní ploše — jen pak je puštění tah hráče ve hře. */
+  let pressActive = false;
 
   const bit = (action: Action): number => 1 << ACTIONS.indexOf(action);
 
@@ -96,7 +119,7 @@ export function createInput(options: InputOptions): InputManager {
     ACTIONS.filter((a) => keymap[a].includes(code));
 
   const onKeyDown = (e: KeyboardEvent): void => {
-    if (e.repeat) return;
+    if (e.repeat || isEditableTarget(e.target)) return;
     const hit = actionsForKey(e.code);
     if (hit.length === 0) return;
     // Šipky a mezerník by jinak scrollovaly stránku pod hrou.
@@ -105,6 +128,7 @@ export function createInput(options: InputOptions): InputManager {
   };
 
   const onKeyUp = (e: KeyboardEvent): void => {
+    if (isEditableTarget(e.target)) return;
     const hit = actionsForKey(e.code);
     if (hit.length === 0) return;
     e.preventDefault();
@@ -112,10 +136,15 @@ export function createInput(options: InputOptions): InputManager {
   };
 
   // Po přepnutí okna zůstanou klávesy „zaseklé" — při blur je pustíme.
+  // Stejně tak nevyzvednutý stisk ukazatele: jinak by se odbavil po návratu.
   const onBlur = (): void => {
     rawDown.clear();
     virtualDown.clear();
     gamepadDown.clear();
+    pointerDownRaw = false;
+    pointerPressedRaw = false;
+    pointerReleasedRaw = false;
+    pressActive = false;
   };
 
   const updatePointerPosition = (e: PointerEvent): void => {
@@ -132,14 +161,21 @@ export function createInput(options: InputOptions): InputManager {
     updatePointerPosition(e);
     pointerDownRaw = true;
     pointerPressedRaw = true;
-    options.target.setPointerCapture?.(e.pointerId);
+    pressActive = true;
   };
   const onPointerMove = (e: PointerEvent): void => updatePointerPosition(e);
+  /**
+   * `pointerup` posloucháme na okně, aby tažení nezůstalo viset, když hráč
+   * pustí tlačítko mimo plátno. Puštění ale smí být tahem ve hře jen tehdy,
+   * když stisk na plátně začal — kliknutí do překryvu pauzy nebo do panelu
+   * vedle hry jinak dorazilo do hry jako tah na náhodném místě.
+   */
   const onPointerUp = (e: PointerEvent): void => {
+    if (!pressActive) return;
     updatePointerPosition(e);
     pointerDownRaw = false;
     pointerReleasedRaw = true;
-    options.target.releasePointerCapture?.(e.pointerId);
+    pressActive = false;
   };
 
   const pollGamepad = (): void => {
@@ -161,13 +197,22 @@ export function createInput(options: InputOptions): InputManager {
     if (ay > 0.35) gamepadDown.add('down');
   };
 
+  /*
+   * Zajetí ukazatele (`setPointerCapture`) tady záměrně není. Vstup visí na
+   * hostitelském divu hry, ve kterém leží plátno; zajetí by všechny další
+   * události o ukazateli přesměrovalo na div a plátno by je už nevidělo.
+   * Hry, které si na plátno věší vlastní `pointerup` (Sudoku, Hledač min,
+   * Čtyři v řadě, Piškvorky, Pasiáns), by tím přišly o ovládání myší.
+   * Tažení mimo plochu drží `pointermove` a `pointerup` na okně.
+   */
   window.addEventListener('keydown', onKeyDown, { passive: false });
   window.addEventListener('keyup', onKeyUp, { passive: false });
   window.addEventListener('blur', onBlur);
   options.target.addEventListener('pointerdown', onPointerDown);
-  options.target.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
-  options.target.addEventListener('contextmenu', (e) => e.preventDefault());
+  const onContextMenu = (e: Event): void => e.preventDefault();
+  options.target.addEventListener('contextmenu', onContextMenu);
 
   const manager: InputManager = {
     held: (action) => (current & bit(action)) !== 0,
@@ -243,6 +288,17 @@ export function createInput(options: InputOptions): InputManager {
       else virtualDown.delete(action);
     },
 
+    reset() {
+      onBlur();
+      heldFor.clear();
+      repeatTimer.clear();
+      current = 0;
+      previous = 0;
+      pointer.down = false;
+      pointer.pressed = false;
+      pointer.released = false;
+    },
+
     usedActions,
 
     destroy() {
@@ -250,8 +306,9 @@ export function createInput(options: InputOptions): InputManager {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
       options.target.removeEventListener('pointerdown', onPointerDown);
-      options.target.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      options.target.removeEventListener('contextmenu', onContextMenu);
     },
   };
 
@@ -311,6 +368,12 @@ export function createReplayInput(logicalWidth = 0, logicalHeight = 0): InputMan
     setKeymap() {},
     getKeymap: () => ({ ...keymap }),
     setVirtual() {},
+    reset() {
+      heldFor.clear();
+      repeatTimer.clear();
+      current = 0;
+      previous = 0;
+    },
     usedActions: new Set<Action>(),
     destroy() {},
   };

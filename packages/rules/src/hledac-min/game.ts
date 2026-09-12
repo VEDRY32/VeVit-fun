@@ -8,9 +8,10 @@
 
 import { createRng, type Rng } from '@vevit-games/engine/core';
 
-export const HLEDAC_RULES_VERSION = 1;
+export const HLEDAC_RULES_VERSION = 2;
 
-export type CellState = 'hidden' | 'revealed' | 'flagged' | 'question';
+/** `wrongFlag` vzniká až po prohře: vlajka, pod kterou mina nebyla. */
+export type CellState = 'hidden' | 'revealed' | 'flagged' | 'question' | 'wrongFlag';
 export type HledacDifficulty = 'zacatecnik' | 'pokrocily' | 'expert' | 'vlastni';
 
 export interface HledacConfig {
@@ -208,6 +209,16 @@ export function createHledacMin(seed: string, config: Partial<HledacConfig> = {}
       state.cells[i] = 'revealed';
       state.explodedAt = i;
       state.over = true;
+      // Po prohře se ukáže celé pole: kde miny byly a které vlajky byly
+      // vedle. Bez toho hráč netuší, kde udělal chybu.
+      for (let m = 0; m < total; m++) {
+        if (m === i) continue;
+        if (state.mines[m]) {
+          if (state.cells[m] === 'hidden' || state.cells[m] === 'question') state.cells[m] = 'revealed';
+        } else if (state.cells[m] === 'flagged') {
+          state.cells[m] = 'wrongFlag';
+        }
+      }
       return;
     }
 

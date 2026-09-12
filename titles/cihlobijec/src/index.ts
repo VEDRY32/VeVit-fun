@@ -259,16 +259,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createCihlobijec(ctx.seed);
-      particles?.clear();
-      finished = false;
-      lastScore = 0;
-      lastBrickCount = game.remaining();
-      paddleTarget = FIELD_W / 2;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointermove', onPointerMove);

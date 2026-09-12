@@ -338,13 +338,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createHladovec(ctx.seed);
-      finished = false;
-      lastScore = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onDown);

@@ -276,15 +276,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createCtyriVRade(ctx.seed);
-      finished = false;
-      falling = null;
-      aiTimer = 0;
-      cursor = Math.floor(CTYRI_COLS / 2);
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerup', onPointerUp);

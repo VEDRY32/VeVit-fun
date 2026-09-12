@@ -42,6 +42,12 @@ export function createAudioBus(initial: Partial<AudioSettings> = {}): AudioBus {
   let sfxGain: GainNode | null = null;
   let musicGain: GainNode | null = null;
   let musicSource: AudioBufferSourceNode | null = null;
+  /**
+   * Vlastní uzel jen na doznívání skladby. Kdyby se fadovalo přímo
+   * `musicGain`, další skladba spuštěná během doznívání by začala na
+   * hlasitosti klesající k nule a pak by hlasitost skokem naskočila.
+   */
+  let musicFade: GainNode | null = null;
 
   // Vygenerované efekty se cachují — přepočítávat je při každém výstřelu
   // by na mobilu shazovalo snímkovou frekvenci.
@@ -92,6 +98,32 @@ export function createAudioBus(initial: Partial<AudioSettings> = {}): AudioBus {
     return source;
   };
 
+  const stopMusic = (fadeMs = 300): void => {
+    if (!musicSource || !ctx) return;
+    const source = musicSource;
+    const fade = musicFade;
+    musicSource = null;
+    musicFade = null;
+
+    const stop = (): void => {
+      try {
+        source.stop();
+      } catch {
+        // zdroj už skončil sám
+      }
+      fade?.disconnect();
+    };
+
+    // Tvrdé zastavení lupne — vyfadeujeme a teprve pak zastavíme.
+    if (!fade || fadeMs <= 0) {
+      stop();
+      return;
+    }
+    fade.gain.setValueAtTime(fade.gain.value, ctx.currentTime);
+    fade.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + fadeMs / 1000);
+    window.setTimeout(stop, fadeMs);
+  };
+
   return {
     play(name, rate = 1) {
       if (settings.muted || !ctx || !sfxGain) return;
@@ -107,27 +139,17 @@ export function createAudioBus(initial: Partial<AudioSettings> = {}): AudioBus {
 
     playMusic(song, loop = true) {
       if (!ctx || !musicGain) return;
-      musicSource?.stop();
+      // Předchozí skladba končí hned; dvě hudby přes sebe jsou vždycky chyba.
+      stopMusic(0);
       const buffer = toBuffer(`song:${song.id}`, renderSong(song));
-      if (buffer) musicSource = playBuffer(buffer, musicGain, 1, loop);
+      if (!buffer) return;
+      const fade = ctx.createGain();
+      fade.connect(musicGain);
+      musicFade = fade;
+      musicSource = playBuffer(buffer, fade, 1, loop);
     },
 
-    stopMusic(fadeMs = 300) {
-      if (!musicSource || !musicGain || !ctx) return;
-      const source = musicSource;
-      musicSource = null;
-      // Tvrdé zastavení lupne — vyfadeujeme a teprve pak zastavíme.
-      musicGain.gain.setValueAtTime(musicGain.gain.value, ctx.currentTime);
-      musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + fadeMs / 1000);
-      window.setTimeout(() => {
-        try {
-          source.stop();
-        } catch {
-          // zdroj už skončil sám
-        }
-        applyGains();
-      }, fadeMs);
-    },
+    stopMusic,
 
     setSettings(next) {
       Object.assign(settings, next);
@@ -144,10 +166,13 @@ export function createAudioBus(initial: Partial<AudioSettings> = {}): AudioBus {
     },
 
     destroy() {
-      musicSource?.stop();
+      stopMusic(0);
       bufferCache.clear();
       void ctx?.close();
       ctx = null;
+      masterGain = null;
+      sfxGain = null;
+      musicGain = null;
     },
   };
 }

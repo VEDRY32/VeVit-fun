@@ -1,11 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+export interface ControlRow {
+  keys: string;
+  label: string;
+}
 
 export interface PauseOverlayProps {
   open: boolean;
   title?: string;
+  /**
+   * Ovládání hry. Pauza ho umí ukázat rovnou v překryvu — odkazovat na
+   * seznam ve vedlejším panelu nemá smysl, překryv ho zakrývá.
+   */
+  controls?: readonly ControlRow[];
   onResume(): void;
   onRestart(): void;
-  onControls(): void;
   onSettings(): void;
   onLeave(): void;
 }
@@ -17,10 +26,16 @@ export interface PauseOverlayProps {
  * a Escape vrací do hry.
  */
 export function PauseOverlay({
-  open, title = 'Pauza', onResume, onRestart, onControls, onSettings, onLeave,
+  open, title = 'Pauza', controls = [], onResume, onRestart, onSettings, onLeave,
 }: PauseOverlayProps): JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null);
   const firstRef = useRef<HTMLButtonElement>(null);
+  const [showControls, setShowControls] = useState(false);
+
+  // Každá nová pauza začíná se sbaleným ovládáním.
+  useEffect(() => {
+    if (!open) setShowControls(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,7 +77,26 @@ export function PauseOverlay({
             Pokračovat
           </button>
           <button type="button" className="tlacitko" onClick={onRestart}>Hrát znovu</button>
-          <button type="button" className="tlacitko" onClick={onControls}>Ovládání</button>
+          {controls.length > 0 && (
+            <button
+              type="button"
+              className="tlacitko"
+              aria-expanded={showControls}
+              onClick={() => setShowControls((v) => !v)}
+            >
+              Ovládání
+            </button>
+          )}
+          {showControls && (
+            <ul className="prekryv__ovladani">
+              {controls.map((row) => (
+                <li key={row.keys + row.label}>
+                  <kbd>{row.keys}</kbd>
+                  <span>{row.label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <button type="button" className="tlacitko" onClick={onSettings}>Nastavení</button>
           <button type="button" className="tlacitko tlacitko--tiche" onClick={onLeave}>Odejít</button>
         </div>

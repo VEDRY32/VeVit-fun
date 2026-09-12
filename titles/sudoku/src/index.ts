@@ -7,6 +7,7 @@
  */
 
 import {
+  isEditableTarget,
   paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
@@ -295,9 +296,12 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         if ((notes & (1 << (n - 1))) === 0) continue;
         const nx = x + ((n - 1) % 3 + 0.5) * (CELL / 3);
         const ny = y + (Math.floor((n - 1) / 3) + 0.5) * (CELL / 3);
+        // Poznámka musí být na první pohled něco jiného než zapsané číslo.
+        // Červená se nehodí — tou hra označuje chybný zápis —, takže
+        // poznámky nesou sekundární barvu značky.
         centerText(c, String(n), nx, ny,
-          `500 ${Math.round(CELL * 0.2)}px system-ui, sans-serif`,
-          withAlpha(ctx.theme.textMuted, 0.85));
+          `600 ${Math.round(CELL * 0.24)}px system-ui, sans-serif`,
+          herniPaleta.oranzova);
       }
     }
 
@@ -372,6 +376,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
   const onKeyDown = (e: KeyboardEvent): void => {
     if (game.state.solved) return;
+    if (isEditableTarget(e.target)) return;
     // Číslice ovládáme přímo: engine je do akcí nemapuje.
     const digit = Number(e.key);
     if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
@@ -417,14 +422,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createSudoku(ctx.seed, difficulty);
-      finished = false;
-      hintCell = -1;
-      hintTicks = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerup', onPointerUp);

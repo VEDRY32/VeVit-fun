@@ -56,10 +56,6 @@ const ALLOWLIST = new Map([
     'titles/petipismenka/src/index.ts',
     'Nekonečný režim losuje slovo mimo hodnocený běh; denní režim jede ze seedu.',
   ],
-  [
-    'titles/bezec/src/index.ts',
-    'Seed nového běhu po konci hry; samotná logika běhu je v rules a je deterministická.',
-  ],
 ]);
 
 function walk(dir) {

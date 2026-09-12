@@ -146,12 +146,21 @@ export type GameEvent =
   | { type: 'score'; value: number }
   | { type: 'gameover'; score: number; durationMs: number; stats?: Record<string, number> }
   | { type: 'win'; score: number; durationMs: number; stats?: Record<string, number> }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  /**
+   * Hra si říká o nový běh (například „zmáčkni skok a jedeš znovu").
+   * Restartovat se sama nesmí: nový běh znamená i nový seed a nové run_id
+   * od serveru, jinak by server další výsledek odmítl.
+   */
+  | { type: 'restart' };
 
 export interface GameInstance {
   pause(): void;
   resume(): void;
-  restart(): void;
+  /**
+   * Uvolní vše, co hra zabrala. Restart portál neřeší přes instanci —
+   * hru postaví znovu od nuly, aby nový běh dostal čistý stav i seed.
+   */
   destroy(): void;
   /** Serializace rozehrané pozice pro „Pokračuj v hraní" (max 64 kB). */
   getSave?(): unknown;

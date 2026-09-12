@@ -44,6 +44,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   const [input, setInput] = useState<InputManager | null>(null);
 
   const [phase, setPhase] = useState<Phase>('loading');
+  // Pauza, restart i události ze hry se ptají na aktuální fázi mimo render.
+  const phaseRef = useRef<Phase>('loading');
+  phaseRef.current = phase;
   const [mode, setMode] = useState<string>(() => {
     const requested = new URLSearchParams(window.location.search).get('rezim');
     const available = entry?.manifest.modes.map((m) => m.id) ?? [];
@@ -56,6 +59,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   const [usedActions, setUsedActions] = useState<ReadonlySet<Action>>(new Set());
   const [needsRotate, setNeedsRotate] = useState(false);
   const [freshBadges, setFreshBadges] = useState<Badge[]>([]);
+  // Restart volají i hry samy (událost `restart`), a to zevnitř běžící
+  // smyčky — přes ref, aby se do nich nemusela protahovat aktuální funkce.
+  const restartRef = useRef<() => void>(() => {});
 
   // Počty odehraných partií drží profil i odznaky; ukládají se lokálně.
   const playsRef = useRef<Record<string, number>>(loadPlays());
@@ -111,6 +117,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     setPhase('loading');
     setResult(null);
     setScore(0);
+    setUsedActions(new Set());
 
     let module: GameModule;
     try {
@@ -174,6 +181,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           setPhase('playing');
           break;
         case 'paused':
+          // Smyčka pauzuje i sama (ztráta fokusu). Dohranou partii tím ale
+          // nesmí přebít — jinak by výsledek zmizel pod překryvem pauzy.
+          if (phaseRef.current !== 'playing') break;
+          inputRef.current?.reset();
           setPhase('paused');
           break;
         case 'score':
@@ -188,6 +199,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           setResult({ score: event.score, won: true, stats: event.stats });
           setPhase('finished');
           recordOutcome(event.score);
+          break;
+        case 'restart':
+          restartRef.current();
           break;
         case 'error':
           setPhase('error');
@@ -250,6 +264,42 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     };
   }, [startGame]);
 
+  // Zvuková sběrnice drží AudioContext. Bez úklidu by po pár přechodech
+  // mezi hrami narazila na limit prohlížeče a zvuk by přestal hrát.
+  useEffect(() => () => audio.destroy(), [audio]);
+
+  /**
+   * Pauza, pokračování a restart mají jedno místo pro všechny tři vstupy
+   * (lišta, Escape, překryv). Vstup se u každého z nich nuluje: stisk, který
+   * padl mimo běžící smyčku, by se jinak odbavil až po návratu do hry.
+   */
+  const pauseGame = useCallback((): void => {
+    if (phaseRef.current !== 'playing') return;
+    instanceRef.current?.pause();
+    inputRef.current?.reset();
+    setPhase('paused');
+  }, []);
+
+  const resumeGame = useCallback((): void => {
+    if (phaseRef.current !== 'paused') return;
+    inputRef.current?.reset();
+    instanceRef.current?.resume();
+    setPhase('playing');
+  }, []);
+
+  /**
+   * Restart je nové spuštění hry, ne jen `instance.restart()`: ten nechá
+   * portálu staré skóre a hře starý běh i seed, takže další výsledek by
+   * server odmítl. `startGame` sáhne pro nový běh a postaví hru od nuly.
+   */
+  const restartGame = useCallback((): void => {
+    void startGame();
+  }, [startGame]);
+
+  useEffect(() => {
+    restartRef.current = restartGame;
+  }, [restartGame]);
+
   // Nápověda ovládání mizí po řádcích, jak hráč akce zkouší.
   useEffect(() => {
     if (!input || phase !== 'playing') return;
@@ -262,18 +312,16 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     void fetchLeaderboard(entry.manifest.slug, mode).then(setLeaderboard);
   }, [entry, mode]);
 
-  // Escape pauzuje hru — jediná klávesa, kterou portál hrám bere.
+  // Escape je jediná klávesa, kterou portál hrám bere: přepíná pauzu.
+  // Pokračování řeší překryv pauzy sám, tady se jen pauzuje.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
-      if (phase === 'playing') {
-        instanceRef.current?.pause();
-        setPhase('paused');
-      }
+      pauseGame();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase]);
+  }, [pauseGame]);
 
   if (!entry || !manifest) {
     return (
@@ -312,10 +360,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           <button
             type="button"
             className="hra__ikona"
-            onClick={() => {
-              instanceRef.current?.pause();
-              setPhase('paused');
-            }}
+            onClick={pauseGame}
           >
             <span aria-hidden="true">⏸</span>
             <span className="vizualne-skryte">Pauza</span>
@@ -419,15 +464,12 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
 
       <PauseOverlay
         open={phase === 'paused'}
-        onResume={() => {
-          instanceRef.current?.resume();
-          setPhase('playing');
-        }}
-        onRestart={() => {
-          instanceRef.current?.restart();
-          setPhase('playing');
-        }}
-        onControls={() => document.querySelector('.ovladani')?.scrollIntoView({ behavior: 'smooth' })}
+        controls={(moduleRef.current?.controlHints ?? []).map((hint) => ({
+          keys: hint.keys,
+          label: hint.label,
+        }))}
+        onResume={resumeGame}
+        onRestart={restartGame}
         onSettings={() => navigate(`/${i18n.locale}/nastaveni`)}
         onLeave={() => navigate(`/${i18n.locale}/`)}
       />
@@ -454,10 +496,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           label,
           value: String(value),
         }))}
-        onRestart={() => {
-          instanceRef.current?.restart();
-          setPhase('playing');
-        }}
+        onRestart={restartGame}
         onLeave={() => navigate(`/${i18n.locale}/`)}
       />
 

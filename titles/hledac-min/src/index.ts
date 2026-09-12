@@ -176,7 +176,9 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
           const count = game.state.counts[index]!;
           if (count === -1) {
-            c.fillStyle = ctx.theme.background;
+            // Mina, na které hra skončila, sedí na červeném poli; ostatní
+            // se dokreslují po prohře, proto musí být vidět i na tmavém.
+            c.fillStyle = game.state.explodedAt === index ? ctx.theme.background : herniPaleta.cervena;
             c.beginPath();
             c.arc(px + cell / 2, py + cell / 2, cell * 0.26, 0, Math.PI * 2);
             c.fill();
@@ -202,7 +204,19 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
           if (state === 'flagged') {
             centerText(c, '⚑', px + cell / 2, py + cell / 2,
-              `600 ${Math.round(cell * 0.5)}px system-ui, sans-serif`, ctx.theme.accent);
+              `600 ${Math.round(cell * 0.5)}px system-ui, sans-serif`, herniPaleta.cervena);
+          } else if (state === 'wrongFlag') {
+            // Vlajka vedle: po prohře se přeškrtne, ať je chyba vidět.
+            centerText(c, '⚑', px + cell / 2, py + cell / 2,
+              `600 ${Math.round(cell * 0.5)}px system-ui, sans-serif`, ctx.theme.textMuted);
+            c.strokeStyle = herniPaleta.cervena;
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(px + cell * 0.25, py + cell * 0.25);
+            c.lineTo(px + cell * 0.75, py + cell * 0.75);
+            c.moveTo(px + cell * 0.75, py + cell * 0.25);
+            c.lineTo(px + cell * 0.25, py + cell * 0.75);
+            c.stroke();
           } else if (state === 'question') {
             centerText(c, '?', px + cell / 2, py + cell / 2,
               `600 ${Math.round(cell * 0.5)}px system-ui, sans-serif`, ctx.theme.textMuted);
@@ -291,12 +305,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = makeGame();
-      finished = false;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerup', onPointerUp);

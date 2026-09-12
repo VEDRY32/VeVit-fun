@@ -7,6 +7,7 @@
  */
 
 import {
+  isEditableTarget,
   paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha, createRng,
   easing, clamp01,
@@ -228,6 +229,8 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    // Psaní do vyhledávání v hlavičce není tip do hry.
+    if (isEditableTarget(event.target)) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       void submitGuess();
@@ -409,17 +412,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      rows = [];
-      current = [];
-      keyboard = new Map();
-      finished = false;
-      won = false;
-      message = '';
-      answer = isDaily ? null : pickLocalAnswer();
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       window.removeEventListener('keydown', onKeyDown);

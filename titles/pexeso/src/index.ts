@@ -267,14 +267,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = makeGame();
-      flips = new Float32Array(game.state.cards.length);
-      finished = false;
-      cursor = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerup', onPointerUp);

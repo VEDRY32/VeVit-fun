@@ -12,6 +12,7 @@ ověřená před použitím. GPL jen jako izolovaný worker s atribucí.
 | Vite | ^6 | MIT | build | dev závislost |
 | TypeScript | ^5.7 | Apache-2.0 | build | dev závislost |
 | Vitest | ^2 | MIT | testy | dev závislost |
+| happy-dom | ^20 | MIT | DOM v testech vstupu | dev závislost |
 | Fastify | ^5 | MIT | API | |
 | ws | ^8 | MIT | realtime | |
 | PixiJS | ^8 | MIT | render jen u vybraných her | lazy chunk |

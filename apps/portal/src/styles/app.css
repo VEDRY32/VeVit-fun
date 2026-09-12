@@ -571,12 +571,25 @@
   font-size: var(--fs-xs);
 }
 
+.prekryv__ovladani {
+  list-style: none;
+  margin: 0;
+  padding: var(--s-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+
+.prekryv__ovladani li,
 .ovladani li {
   display: flex;
   align-items: center;
   gap: var(--s-sm);
 }
 
+.prekryv__ovladani kbd,
 .ovladani kbd,
 .napoveda__klavesa {
   font-family: var(--font-text);
