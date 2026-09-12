@@ -32,8 +32,9 @@
   --kat-karty: #a78bfa;
   --kat-original: var(--zelena);
 
-  /* Barva právě zobrazené kategorie; stránky ji přepisují. */
-  --akcent: var(--kat-logika);
+  /* Akcent rozhraní. Výchozí je barva značky — stránky a dlaždice ji
+     přepisují barvou zobrazené kategorie. */
+  --akcent: var(--zelena);
 
   /* Portál má jedno písmo; --font-display se liší jen prostrkáním. */
   --font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -164,6 +165,11 @@ button {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Označený text nese barvu značky. */
+::selection {
+  background: color-mix(in srgb, var(--zelena) 35%, transparent);
 }
 
 /* Odkaz na přeskočení navigace — vidět až při fokusu. */

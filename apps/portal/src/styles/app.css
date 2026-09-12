@@ -7,7 +7,9 @@
   align-items: center;
   gap: var(--s-lg);
   padding: var(--s-md) var(--s-lg);
-  border-bottom: 1px solid var(--linka);
+  /* Linka pod hlavičkou nese barvu značky — je to první zelená, kterou
+     hráč na stránce uvidí, a drží ji přes celou šířku. */
+  border-bottom: 1px solid color-mix(in srgb, var(--zelena) 40%, var(--linka));
   background: color-mix(in srgb, var(--noc) 88%, black);
   position: sticky;
   top: 0;
@@ -36,10 +38,15 @@
   height: 9px;
   border-radius: 2px;
 }
+/* Značkové barvy, ne kategorie: tři odstíny zelené a jedna oranžová. */
 .hlavicka__logo span:nth-child(1) { background: var(--zelena); }
-.hlavicka__logo span:nth-child(2) { background: var(--kat-logika); }
-.hlavicka__logo span:nth-child(3) { background: var(--kat-arkady); }
-.hlavicka__logo span:nth-child(4) { background: var(--kat-akce); }
+.hlavicka__logo span:nth-child(2) { background: var(--zelena-tmava); }
+.hlavicka__logo span:nth-child(3) { background: var(--oranzova); }
+.hlavicka__logo span:nth-child(4) { background: var(--zelena-tmavsi); }
+
+.hlavicka__znacka:hover {
+  color: var(--zelena);
+}
 
 .hlavicka__hledani {
   flex: 1;
@@ -60,6 +67,7 @@
 
 .hlavicka__hledani input:focus {
   border-color: var(--zelena);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--zelena) 18%, transparent);
   outline: none;
 }
 
@@ -124,7 +132,7 @@
 }
 
 .pata {
-  border-top: 1px solid var(--linka);
+  border-top: 1px solid color-mix(in srgb, var(--zelena) 30%, var(--linka));
   padding: var(--s-lg);
   color: var(--text-tlumeny);
   font-size: var(--fs-xs);
@@ -183,7 +191,11 @@
 
 .hero__stitek {
   font-size: var(--fs-xs);
-  color: var(--akcent);
+  /* Značková zelená, ne barva kategorie: „Hra dne" je hlas portálu. */
+  color: var(--zelena);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .hero__nazev {
@@ -200,6 +212,7 @@
 .vyzvy {
   background: var(--pult);
   border: 1px solid var(--linka);
+  border-top: 2px solid var(--zelena);
   border-radius: var(--r-tile);
   padding: var(--s-lg);
 }
@@ -252,6 +265,19 @@
 
 .police__nazev {
   font-size: var(--fs-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+/* Krátký zelený praporek před názvem police — rytmus stránky drží značka. */
+.police__nazev::before {
+  content: '';
+  width: 3px;
+  align-self: stretch;
+  min-height: 1em;
+  border-radius: 2px;
+  background: var(--zelena);
 }
 
 .police__ovladani {
@@ -263,13 +289,12 @@
 
 .police__vice {
   font-size: var(--fs-xs);
-  color: var(--text-tlumeny);
+  color: var(--zelena);
   border-bottom: 1px solid transparent;
 }
 
 .police__vice:hover {
-  color: var(--text);
-  border-bottom-color: var(--akcent);
+  border-bottom-color: var(--zelena);
 }
 
 .police__sipka {
@@ -1147,7 +1172,7 @@ input[type='checkbox'] {
 }
 
 .vyzvy__cislo {
-  color: var(--text-tlumeny);
+  color: var(--zelena);
   font-size: var(--fs-xs);
 }
 
