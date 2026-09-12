@@ -14,7 +14,7 @@ import {
 import {
   createInvaze, FIELD_W, FIELD_H, PLAYER_Y, PLAYER_W, PLAYER_H,
   SHIELD_COLS, SHIELD_ROWS, SHIELD_CELL, SHIELD_Y,
-  type Enemy, type EnemyKind,
+  type Enemy, type EnemyKind, type InvazeDifficulty,
 } from '@vevit-games/rules/invaze';
 import { manifest } from './manifest.js';
 
@@ -123,7 +123,8 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   });
   const { input } = ctx;
 
-  let game = createInvaze(ctx.seed);
+  const difficulty = (ctx.mode === 'snadna' || ctx.mode === 'tezka' ? ctx.mode : 'stredni') as InvazeDifficulty;
+  let game = createInvaze(ctx.seed, difficulty);
   const particles = ctx.theme.lowQuality
     ? null
     : createParticles(createRng(`${ctx.seed}:castice`), 220);
@@ -162,6 +163,27 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     c.textAlign = 'right';
     c.fillStyle = paleta.zelena;
     c.fillText('▲'.repeat(Math.max(0, game.state.lives)), FIELD_W - 14, 22);
+
+    // Ukazatel zahřátí zbraně. Musí být u lodi, ne v hlavičce — hráč se
+    // v boji dívá dolů a nahoru nemá kdy koukat.
+    const barW = 120;
+    const barX = (FIELD_W - barW) / 2;
+    const barY = PLAYER_Y + PLAYER_H + 14;
+    c.fillStyle = withAlpha(ctx.theme.text, 0.12);
+    roundRect(c, barX, barY, barW, 6, 3);
+    c.fill();
+    const heatColor = game.state.overheated
+      ? herniPaleta.cervena
+      : game.state.heat > 0.7 ? herniPaleta.oranzova : paleta.zelena;
+    c.fillStyle = heatColor;
+    roundRect(c, barX, barY, Math.max(2, barW * game.state.heat), 6, 3);
+    c.fill();
+    if (game.state.overheated) {
+      c.textAlign = 'center';
+      c.font = '600 12px system-ui, sans-serif';
+      c.fillStyle = herniPaleta.cervena;
+      c.fillText('PŘEHŘÁTO', FIELD_W / 2, barY + 20);
+    }
 
     const phase = Math.floor(game.state.tick / 20);
     for (const enemy of game.state.enemies as Enemy[]) {

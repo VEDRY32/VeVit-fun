@@ -234,3 +234,27 @@ rádiusy 6/8/12/16 a specifikace tlačítka, pole a karty.
   a Pasiáns na líc karty, tedy na světlý podklad, na kterém jsou herní
   odstíny (laděné na tmu) nečitelné.
 
+## D-016 — Hry si nechávají vlastní názvy
+
+**Stav:** přijato
+
+**Kontext:** zadání oprav žádá přejmenovat Zdvojku na „2048" a označuje
+k přejmenování i Mávníka a Pasiáns (bez uvedení nového názvu).
+
+**Rozhodnutí:** názvy zůstávají. Původní zadání portálu to v sekci
+o duševním vlastnictví říká přímo: „V UI, URL, metadatech, SEO ani
+viditelném kódu nepoužívej chráněné názvy… **Používej názvy z tohoto
+dokumentu**." A ten dokument hru jmenuje Zdvojka; „2048" v něm stojí
+jen v závorce jako žánrové vysvětlení pro vývojáře, ne jako název pro UI.
+Pravidlo je v zadání označené za nepřekročitelné a hlídá ho
+`scripts/check-ip.mjs`, takže mu dávám přednost před pozdějším požadavkem.
+
+**Důsledky:**
+- Zdvojka, Mávník i Pasiánsy si drží názvy. U Mávníka a Pasiáns navíc
+  zadání nový název neuvádí, takže by nebylo ani na co přejmenovat.
+- Číslo 2048 zůstává v kódu tam, kam patří věcně: jako hodnota dlaždice
+  a podmínka výhry. Na seznam zakázaných slov proto nepatří.
+- Pokud zadavatel na přejmenování trvá, je to jeho rozhodnutí o riziku:
+  stačí doplnit nové názvy a upravit `check-ip.mjs`. Do té doby platí
+  přísnější varianta.
+

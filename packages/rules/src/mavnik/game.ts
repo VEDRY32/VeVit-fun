@@ -5,10 +5,13 @@
  * žebříček, takže server musí umět běh přehrát na bit přesně.
  */
 
-import { createRng, fx, fxAdd, fxMul, fxFloor, toFloat, type Fx, type Rng } from '@vevit-games/engine/core';
+import {
+  createRng, fx, fxAdd, fxSub, fxMul, fxAbs, fxClamp, fxFloor, toFloat,
+  type Fx, type Rng,
+} from '@vevit-games/engine/core';
 import { BIT, justPressed } from '../input-bits.js';
 
-export const MAVNIK_RULES_VERSION = 1;
+export const MAVNIK_RULES_VERSION = 2;
 
 export const WORLD_W = 400;
 export const WORLD_H = 600;
@@ -62,6 +65,12 @@ export interface MavnikGame {
   pipeRects(): { x: number; y: number; w: number; h: number }[];
   /** Medaile podle skóre — bronz 10, stříbro 25, zlato 50. */
   medal(): 'zadna' | 'bronz' | 'stribro' | 'zlato';
+  /**
+   * Naráží drak právě teď? Stejná funkce, jakou používá `step`.
+   * Je součástí rozhraní, aby šla geometrie nárazu ověřit testem přímo,
+   * bez obcházení přes celý krok hry.
+   */
+  collides(): boolean;
 }
 
 export function createMavnik(seed: string, mode: MavnikMode = 'klasik'): MavnikGame {
@@ -99,21 +108,43 @@ export function createMavnik(seed: string, mode: MavnikMode = 'klasik'): MavnikG
     spawnPipe(fxAdd(fx(WORLD_W + 60), fxMul(PIPE_SPACING, fx(i))));
   }
 
+  /**
+   * Kruh proti obdélníku, celé ve fixed-pointu.
+   *
+   * Dřív se místo kruhu porovnával jeho opsaný čtverec, takže hra hlásila
+   * náraz i tehdy, když se roh čtverce minul se stavbou o několik pixelů —
+   * hráč viděl volný průlet a přesto prohrál. Nejbližší bod obdélníku je
+   * od středu nanejvýš o poloměr, takže druhé mocniny zůstávají malé
+   * a v Q16.16 se nepřetečou.
+   */
+  const circleHitsRect = (
+    cx: Fx, cy: Fx, radius: Fx,
+    left: Fx, right: Fx, top: Fx, bottom: Fx,
+  ): boolean => {
+    const dx = fxSub(cx, fxClamp(cx, left, right));
+    const dy = fxSub(cy, fxClamp(cy, top, bottom));
+    if (fxAbs(dx) > radius || fxAbs(dy) > radius) return false;
+    return fxAdd(fxMul(dx, dx), fxMul(dy, dy)) <= fxMul(radius, radius);
+  };
+
   const collides = (): boolean => {
     const y = state.y;
-    // Strop i zem zabíjí.
-    if (y - BIRD_RADIUS <= 0 || y + BIRD_RADIUS >= fx(WORLD_H)) return true;
+    // Zem zabíjí. Strop ne — o něj se drak jen zarazí (řeší `step`),
+    // protože smrt nahoře působí jako chyba, ne jako překážka.
+    if (fxAdd(y, BIRD_RADIUS) >= fx(WORLD_H)) return true;
 
     for (const pipe of state.pipes) {
       const left = pipe.x;
       const right = fxAdd(pipe.x, PIPE_WIDTH);
-      // Vodorovný průnik s kruhem ptáka.
-      if (fxAdd(BIRD_X, BIRD_RADIUS) < left || BIRD_X - BIRD_RADIUS > right) continue;
+      if (fxAdd(BIRD_X, BIRD_RADIUS) < left || fxSub(BIRD_X, BIRD_RADIUS) > right) continue;
 
       const half = fxMul(pipe.gap, fx(0.5));
-      const gapTop = pipe.gapCenter - half;
+      const gapTop = fxSub(pipe.gapCenter, half);
       const gapBottom = fxAdd(pipe.gapCenter, half);
-      if (y - BIRD_RADIUS < gapTop || fxAdd(y, BIRD_RADIUS) > gapBottom) return true;
+
+      // Horní i dolní stavba zvlášť; mezi nimi je průlet.
+      if (circleHitsRect(BIRD_X, y, BIRD_RADIUS, left, right, 0, gapTop)) return true;
+      if (circleHitsRect(BIRD_X, y, BIRD_RADIUS, left, right, gapBottom, fx(WORLD_H))) return true;
     }
     return false;
   };
@@ -144,6 +175,11 @@ export function createMavnik(seed: string, mode: MavnikMode = 'klasik'): MavnikG
       state.velocity = fxAdd(state.velocity, GRAVITY);
       if (state.velocity > MAX_FALL) state.velocity = MAX_FALL;
       state.y = fxAdd(state.y, state.velocity);
+      // U stropu se drak zarazí. Smrt nahoře působila jako chyba hry.
+      if (fxSub(state.y, BIRD_RADIUS) < 0) {
+        state.y = BIRD_RADIUS;
+        if (state.velocity < 0) state.velocity = 0;
+      }
 
       state.rotation = Math.max(-0.5, Math.min(1.3, toFloat(state.velocity) * 0.09));
 
@@ -165,6 +201,7 @@ export function createMavnik(seed: string, mode: MavnikMode = 'klasik'): MavnikG
       if (collides()) state.over = true;
     },
 
+    collides,
     birdY: () => toFloat(state.y),
 
     pipeRects() {

@@ -19,5 +19,5 @@ export const manifest: GameManifest = {
   orientation: 'portrait',
   avgSessionMin: 6,
   difficulty: 3,
-  rulesVersion: 1,
+  rulesVersion: 2,
 };

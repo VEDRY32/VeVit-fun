@@ -3,6 +3,7 @@
 import { paleta, herniPaleta, glassTile, roundRect, withAlpha, centerText, shade, type ParticleSystem } from '@vevit-games/engine';
 import {
   COLS, VISIBLE_ROWS, HIDDEN_ROWS, PIECE_COLORS, PIECE_GLYPHS, PIECE_SHAPES,
+  ULTRA_TICKS, SPRINT_LINES,
   type KostkopadGame, type PieceType,
 } from '@vevit-games/rules/kostkopad';
 
@@ -112,6 +113,7 @@ export function renderKostkopad(
   alpha: number,
 ): void {
   const { state } = game;
+  const mode = game.config.mode;
 
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
@@ -194,8 +196,24 @@ export function renderKostkopad(
   value(ctx, state.score.toLocaleString('cs-CZ'), 34, BOARD_Y + 154, theme, 24);
   label(ctx, 'ŘADY', 34, BOARD_Y + 196, theme);
   value(ctx, String(state.lines), 34, BOARD_Y + 212, theme);
-  label(ctx, 'ÚROVEŇ', 34, BOARD_Y + 252, theme);
-  value(ctx, String(state.level), 34, BOARD_Y + 268, theme);
+  // Ultra i Sprint mají cíl, po kterém hra skončí. Bez ukazatele to
+  // vypadalo, že se hra sama zastavila.
+  if (mode === 'ultra') {
+    const left = Math.max(0, ULTRA_TICKS - state.tick);
+    const seconds = Math.ceil(left / 60);
+    label(ctx, 'ZBÝVÁ', 34, BOARD_Y + 252, theme);
+    value(
+      ctx,
+      `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`,
+      34, BOARD_Y + 268, theme,
+    );
+  } else if (mode === 'sprint40') {
+    label(ctx, 'DO CÍLE', 34, BOARD_Y + 252, theme);
+    value(ctx, String(Math.max(0, SPRINT_LINES - state.lines)), 34, BOARD_Y + 268, theme);
+  } else {
+    label(ctx, 'ÚROVEŇ', 34, BOARD_Y + 252, theme);
+    value(ctx, String(state.level), 34, BOARD_Y + 268, theme);
+  }
 
   // --- Pravý panel: fronta ---
   panel(ctx, BOARD_X + BOARD_W + 20, BOARD_Y, 145, 300, theme);

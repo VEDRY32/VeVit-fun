@@ -249,7 +249,10 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
           lastScore = game.state.score;
           ctx.emit({ type: 'score', value: lastScore });
         }
-        if (game.state.over) finish();
+        // Konec hry se hlásí až po dojetí animace posunu. Dřív se výsledek
+        // objevil nad deskou zamrzlou v pozici před posledním tahem, takže
+        // pod ním byly vidět tahy, které už neexistovaly.
+        if (game.state.over && moveAnim === 0) finish();
       },
       render() {
         surface.begin();

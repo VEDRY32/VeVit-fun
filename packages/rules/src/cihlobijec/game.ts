@@ -8,7 +8,16 @@
 
 import { createRng, type Rng } from '@vevit-games/engine/core';
 
-export const CIHLOBIJEC_RULES_VERSION = 1;
+export const CIHLOBIJEC_RULES_VERSION = 2;
+
+/**
+ * Dojíždění pádla. Vysoký koeficient drží pádlo prakticky pod myší,
+ * strop rychlosti brání teleportu přes celé pole a `PADDLE_SNAP` usekne
+ * asymptotický ocas, kvůli kterému pádlo nikdy nedosedlo přesně na cíl.
+ */
+export const PADDLE_FOLLOW = 0.85;
+export const PADDLE_MAX_SPEED = 60;
+export const PADDLE_SNAP = 0.5;
 
 export const FIELD_W = 480;
 export const FIELD_H = 620;
@@ -317,9 +326,17 @@ export function createCihlobijec(seed: string, startLevel = 0): CihlobijecGame {
       state.tick++;
 
       // Pádlo dojíždí k cíli, aby myš i klávesnice působily stejně.
+      // Dřívější koeficient 0,45 znamenal zhruba osm kroků na dojetí, tedy
+      // 130 ms zpoždění za myší — na odražení míčku znatelně moc.
       const halfWidth = state.paddleW / 2;
       const clamped = Math.max(halfWidth, Math.min(FIELD_W - halfWidth, paddleTarget));
-      state.paddleX += (clamped - state.paddleX) * 0.45;
+      const delta = clamped - state.paddleX;
+      if (Math.abs(delta) <= PADDLE_SNAP) {
+        state.paddleX = clamped;
+      } else {
+        const move = delta * PADDLE_FOLLOW;
+        state.paddleX += Math.max(-PADDLE_MAX_SPEED, Math.min(PADDLE_MAX_SPEED, move));
+      }
 
       for (const [kind, ticks] of Object.entries(state.effects)) {
         if (ticks == null) continue;
