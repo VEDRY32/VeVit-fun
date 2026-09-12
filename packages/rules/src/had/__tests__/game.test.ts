@@ -122,3 +122,60 @@ describe('Had', () => {
     expect(game.state.over).toBe(true);
   });
 });
+
+describe('bonusy', () => {
+  it('magnet táhne jídlo k hlavě, ne hada k jídlu', () => {
+    const game = createHad('magnet');
+    const head = game.state.body[0]!;
+    // Bonus si položíme přesně před hlavu, ať ho had sebere prvním posunem.
+    game.state.bonus = { kind: 'magnet', at: { x: head.x + 1, y: head.y }, ticks: 600 };
+    // Jídlo dáme daleko a mimo dráhu hada.
+    game.state.food = { x: head.x + 6, y: head.y + 5 };
+
+    stepMoves(game, 1);
+    expect(game.state.bonus).toBeNull();
+    expect(game.state.magnetTicks).toBeGreaterThan(0);
+
+    // Jídlo se přitahuje po jednom poli za posun, ne skokem.
+    game.state.food = { x: head.x, y: head.y + 5 };
+    stepMoves(game, 1);
+    expect(game.state.food).toEqual({ x: head.x, y: head.y + 4 });
+    stepMoves(game, 1);
+    expect(game.state.food).toEqual({ x: head.x, y: head.y + 3 });
+  });
+
+  it('nůžky zkrátí hada na polovinu, ale nikdy pod tři články', () => {
+    const game = createHad('nuzky');
+    const head = game.state.body[0]!;
+    for (let i = 0; i < 9; i++) game.state.body.push({ x: -1 - i, y: head.y });
+    game.state.length = game.state.body.length;
+    const before = game.state.body.length;
+
+    game.state.bonus = { kind: 'nuzky', at: { x: head.x + 1, y: head.y }, ticks: 600 };
+    stepMoves(game, 1);
+
+    expect(game.state.bonus).toBeNull();
+    expect(game.state.body.length).toBeLessThan(before);
+    expect(game.state.body.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('bonus po vypršení času zmizí a nic nespustí', () => {
+    const game = createHad('cas');
+    const head = game.state.body[0]!;
+    game.state.bonus = { kind: 'magnet', at: { x: head.x, y: head.y + 4 }, ticks: 3 };
+    game.step(0);
+    game.step(0);
+    game.step(0);
+    expect(game.state.bonus).toBeNull();
+    expect(game.state.magnetTicks).toBe(0);
+  });
+
+  it('stejný seed dá stejné bonusy', () => {
+    const a = createHad('shoda');
+    const b = createHad('shoda');
+    stepMoves(a, 120);
+    stepMoves(b, 120);
+    expect(a.state.bonus).toEqual(b.state.bonus);
+    expect(a.state.score).toBe(b.state.score);
+  });
+});

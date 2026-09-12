@@ -5,7 +5,7 @@ import {
   createLoop, createSurface, createReplayRecorder, withAlpha, centerText,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createHad, type HadMode, type Dir } from '@vevit-games/rules/had';
+import { createHad, type HadMode, type Dir, type BonusKind } from '@vevit-games/rules/had';
 import { manifest } from './manifest.js';
 
 const VIEW = 600;
@@ -239,13 +239,55 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.stroke();
     }
 
+    const bonus = game.state.bonus;
+    if (bonus) {
+      const bx = (bonus.at.x + 0.5) * CELL;
+      const by = (bonus.at.y + 0.5) * CELL;
+      const color = bonus.kind === 'magnet' ? herniPaleta.tyrkys : herniPaleta.ruzova;
+      c.strokeStyle = color;
+      c.lineWidth = 2.5;
+      c.lineCap = 'round';
+      if (bonus.kind === 'magnet') {
+        // Podkova otevřená dolů, hroty dokreslené plnou barvou.
+        c.beginPath();
+        c.arc(bx, by - CELL * 0.04, CELL * 0.26, Math.PI, 0);
+        c.stroke();
+        c.fillStyle = color;
+        c.fillRect(bx - CELL * 0.32, by - CELL * 0.04, CELL * 0.12, CELL * 0.22);
+        c.fillRect(bx + CELL * 0.2, by - CELL * 0.04, CELL * 0.12, CELL * 0.22);
+      } else {
+        // Nůžky: dvě zkřížené čepele a očko.
+        c.beginPath();
+        c.moveTo(bx - CELL * 0.26, by - CELL * 0.26);
+        c.lineTo(bx + CELL * 0.18, by + CELL * 0.18);
+        c.moveTo(bx + CELL * 0.26, by - CELL * 0.26);
+        c.lineTo(bx - CELL * 0.18, by + CELL * 0.18);
+        c.stroke();
+      }
+    }
+
     drawSnakeBody(surface.ctx, game.state.body, paleta.zelena, CELL);
+
+    // Magnet je vidět na hlavě, ne jen v HUD — hráč se dívá na hada.
+    if (game.state.magnetTicks > 0) {
+      const head = game.state.body[0]!;
+      c.strokeStyle = withAlpha(herniPaleta.tyrkys, 0.6);
+      c.lineWidth = 2;
+      c.beginPath();
+      c.arc((head.x + 0.5) * CELL, (head.y + 0.5) * CELL, CELL * 0.9, 0, Math.PI * 2);
+      c.stroke();
+    }
 
     centerText(
       c, String(game.state.score), VIEW / 2, 26,
       '600 22px system-ui, sans-serif', withAlpha(ctx.theme.text, 0.6),
     );
   };
+
+  // Bonus se sebere uvnitř kroku pravidel; tady si držíme, co na ploše
+  // leželo před ním, aby šlo poznat sebrání od vypršení času.
+  let bonusBefore: BonusKind | null = null;
+  let bonusAt = { x: -1, y: -1 };
 
   const loop = createLoop(
     {
@@ -262,6 +304,18 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
           lastScore = game.state.score;
           ctx.emit({ type: 'score', value: lastScore });
         }
+
+        // Bonus nemění skóre, takže vlastní zvuk musí hlídat jeho zmizení
+        // pod hlavou — jinak by sebrání proběhlo úplně potichu.
+        const bonusNow = game.state.bonus?.kind ?? null;
+        if (bonusBefore != null && bonusNow == null) {
+          const head = game.state.body[0]!;
+          if (head.x === bonusAt.x && head.y === bonusAt.y) {
+            ctx.audio.play(bonusBefore === 'magnet' ? 'levelUp' : 'clear');
+          }
+        }
+        bonusBefore = bonusNow;
+        if (game.state.bonus) bonusAt = game.state.bonus.at;
         if (game.state.over) finish();
       },
       render() {
