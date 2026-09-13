@@ -1,0 +1,15 @@
+# Co se na Vercel nemusí nahrávat.
+#
+# POZOR: nikdy sem nepatří nic z `packages/*`, `apps/*` ani `titles/*`.
+# Jsou to balíčky pnpm workspace a `pnpm install --frozen-lockfile` selže,
+# jakmile některý z nich chybí — i ten, který se do portálu nebuilduje.
+
+docs/
+ops/
+screenshots/
+dist-nahled/
+.github/
+
+PLAN.md
+PROGRESS.md
+DECISIONS.md

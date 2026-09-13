@@ -36,6 +36,7 @@ pnpm typecheck
 - [PROGRESS.md](PROGRESS.md) — co je hotové a co ne
 - [THIRD_PARTY.md](THIRD_PARTY.md) — licence třetích stran
 - [ops/RUNBOOK.md](ops/RUNBOOK.md) — provoz
+- [docs/NASAZENI-VERCEL.md](docs/NASAZENI-VERCEL.md) — portál na Vercelu (statické nasazení bez API)
 - [docs/ZPRAVA-OPRAVY.md](docs/ZPRAVA-OPRAVY.md) — velká vlna oprav: příčiny a co se z nich opravilo
 - [docs/ZPRAVA-NOVE-HRY.md](docs/ZPRAVA-NOVE-HRY.md) — jedenáct her ve stylu flashové éry
 
