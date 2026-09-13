@@ -136,6 +136,20 @@ describe('Kostkopád — mazání řad', () => {
     expect(quad.state.lastClear?.kind).toBe('quad');
   });
 
+  it('čtyři řady se smažou správně i s nedokončenou vrstvou nad nimi', () => {
+    const quad = createKostkopad('quad-s-nedokoncenou-vrstvou');
+    // Řádek nad mazanou čtveřicí není plný — musí přežít beze změny.
+    fillRow(quad, ROWS - 5, [0, 1, 2]);
+    const survivor = [...quad.state.board[ROWS - 5]!];
+    for (let y = ROWS - 4; y < ROWS; y++) fillRow(quad, y, [0]);
+    verticalIAt(quad, 0);
+    tap(quad, BIT.a);
+    expect(quad.state.lines).toBe(4);
+    expect(quad.state.lastClear?.kind).toBe('quad');
+    // Nedokončený řádek teď musí být úplně dole, nezměněný.
+    expect(quad.state.board[ROWS - 1]).toEqual(survivor);
+  });
+
   it('úroveň roste po deseti řadách', () => {
     const game = createKostkopad('uroven', { mode: 'maraton' });
     expect(game.state.level).toBe(1);

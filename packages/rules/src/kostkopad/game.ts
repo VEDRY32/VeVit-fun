@@ -278,8 +278,12 @@ export function createKostkopad(seed: string, config: Partial<KostkopadConfig> =
     for (let y = ROWS - 1; y >= 0; y--) {
       if (state.board[y]!.every((cell) => cell != null)) cleared.push(y);
     }
-    for (const y of cleared) {
-      state.board.splice(y, 1);
+    // `cleared` je odshora dolů (od nejvyššího indexu); po každém odebrání
+    // řádku se všechny řádky nad ním (nižší index) posunou o jednu pozici
+    // dolů kvůli `unshift`, takže cíl dalšího odebrání musíme posunout
+    // o počet už odebraných řádků — jinak se smaže špatný (nedokončený) řádek.
+    for (let i = 0; i < cleared.length; i++) {
+      state.board.splice(cleared[i]! + i, 1);
       state.board.unshift(Array<PieceType | 'G' | null>(COLS).fill(null));
     }
     return cleared;
