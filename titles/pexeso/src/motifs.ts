@@ -7,6 +7,8 @@
  * odvozený z názvu, aby hra fungovala i s rozšířenou sadou.
  */
 
+import { paleta, herniPaleta } from '@vevit-games/engine';
+
 type Draw = (ctx: CanvasRenderingContext2D, color: string) => void;
 
 const circle = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void => {
@@ -31,7 +33,7 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
       c.closePath();
       c.fill();
     }
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 78, 56, 3);
   },
   liska: (c, color) => {
@@ -48,7 +50,7 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.lineTo(80, 40);
     c.closePath();
     c.fill();
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 40, 50, 4);
     circle(c, 60, 50, 4);
   },
@@ -57,13 +59,13 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.beginPath();
     c.ellipse(50, 54, 30, 34, 0, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 38, 46, 10);
     circle(c, 62, 46, 10);
     c.fillStyle = color;
     circle(c, 38, 46, 4);
     circle(c, 62, 46, 4);
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     c.beginPath();
     c.moveTo(46, 58);
     c.lineTo(54, 58);
@@ -75,11 +77,11 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.fillStyle = color;
     circle(c, 40, 58, 24);
     circle(c, 60, 58, 24);
-    c.fillStyle = '#5FD9A0';
+    c.fillStyle = herniPaleta.zelena;
     c.beginPath();
     c.ellipse(62, 28, 14, 7, -0.5, 0, Math.PI * 2);
     c.fill();
-    c.strokeStyle = '#8B6B4A';
+    c.strokeStyle = herniPaleta.hneda;
     c.lineWidth = 4;
     c.beginPath();
     c.moveTo(50, 36);
@@ -90,7 +92,7 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.fillStyle = color;
     circle(c, 50, 64, 24);
     circle(c, 50, 40, 15);
-    c.strokeStyle = '#8B6B4A';
+    c.strokeStyle = herniPaleta.hneda;
     c.lineWidth = 4;
     c.beginPath();
     c.moveTo(50, 26);
@@ -116,7 +118,7 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.lineTo(66, 76);
     c.closePath();
     c.fill();
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 50, 40, 9);
   },
   planeta: (c, color) => {
@@ -132,11 +134,11 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.fillStyle = color;
     c.fillRect(18, 40, 50, 30);
     c.fillRect(62, 30, 22, 40);
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 32, 74, 8);
     circle(c, 58, 74, 8);
     circle(c, 76, 74, 8);
-    c.fillStyle = '#EEF2FF';
+    c.fillStyle = paleta.text;
     c.fillRect(66, 38, 14, 12);
   },
   tramvaj: (c, color) => {
@@ -148,10 +150,10 @@ const MOTIF_DRAWINGS: Record<string, Draw> = {
     c.lineTo(78, 68);
     c.closePath();
     c.fill();
-    c.fillStyle = '#EEF2FF';
+    c.fillStyle = paleta.text;
     c.fillRect(30, 42, 18, 14);
     c.fillRect(54, 42, 18, 14);
-    c.fillStyle = '#0F1C3F';
+    c.fillStyle = paleta.noc;
     circle(c, 36, 74, 7);
     circle(c, 64, 74, 7);
   },

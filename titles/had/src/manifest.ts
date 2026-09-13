@@ -8,7 +8,7 @@ export const manifest: GameManifest = {
     en: 'Eat, grow, and do not bite yourself. The longer you get, the harder it is.',
   },
   category: 'arkady',
-  tags: ['rychlost', 'reflexy', 'klasika', 'rekordy'],
+  tags: ['rychlost', 'reflexy', 'klasika', 'rekordy', 'bonusy'],
   modes: [
     { id: 'klasik', name: { cs: 'Klasik', en: 'Classic' }, ranked: true, scoring: 'high', unit: 'points' },
     { id: 'bez-zdi', name: { cs: 'Bez zdí', en: 'No walls' }, ranked: true, scoring: 'high', unit: 'points' },
@@ -20,5 +20,5 @@ export const manifest: GameManifest = {
   orientation: 'any',
   avgSessionMin: 3,
   difficulty: 2,
-  rulesVersion: 1,
+  rulesVersion: 2,
 };

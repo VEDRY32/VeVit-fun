@@ -203,3 +203,125 @@ zůstane jako záchranná síť v CI.
 
 **Co skript odhalil hned při zavedení:** Pasiánsy si při stisku ukládaly
 `performance.now()` do pole, které se nikdy nečetlo.
+
+## D-015 — Design tokeny: téměř černá, smaragd, oranžová, Inter
+
+**Stav:** přijato
+
+**Kontext:** zadání portálu uvádělo tmavomodrou paletu výslovně jako fallback
+(„pokud monorepo obsahuje brand tokeny VeVit, použij je"). Zadavatel dodal
+brand tokeny VeVit Games: pozadí `#08090C`, povrch `#111318`, primární
+`#10B981`, sekundární `#F97316`, písmo Inter, škála odsazení po 4 px,
+rádiusy 6/8/12/16 a specifikace tlačítka, pole a karty.
+
+**Rozhodnutí:** tokeny se přebírají jako závazné. Tmavomodrá paleta
+(`#0F1C3F` a spol.) z repa mizí úplně, včetně hardcodovaných hexů ve hrách.
+
+**Důsledky:**
+- Zdrojem pravdy pro barvy je `packages/engine/src/render/palette.ts`.
+  Leží v enginu, protože hry v `titles/` na `@vevit-games/ui` nezávisí —
+  kdyby si paleta žila v UI, hry by si dál psaly vlastní hexy a rozjely by se
+  při každé změně tokenů. `@vevit-games/ui` paletu jen přebaluje do tokenů.
+- `packages/ui/src/styles/tokens.css` je CSS zrcadlo palety. Shodu obou míst
+  a kontrast podle WCAG AA hlídá `packages/ui/src/__tests__/tokeny.test.ts`,
+  aby se rozjetí poznalo v CI, ne na produkci.
+- Barvy kategorií jsou přeladěné pro téměř černé pozadí a všechny drží
+  kontrast ≥ 4,5:1. `textMuted` (`#71717A`) na to nedosahuje (4,1:1), používá
+  se proto jen pro velký nebo nepodstatný text — test to drží na AA large.
+- Písma Bricolage Grotesque, Atkinson Hyperlegible Next a Pixelify Sans
+  nahradilo jediné Inter. Stažená písma klesla z ~300 kB na 133 kB.
+- Dvě výjimky z palety jsou v kódu okomentované: Piškvorky kreslí na papír
+  a Pasiáns na líc karty, tedy na světlý podklad, na kterém jsou herní
+  odstíny (laděné na tmu) nečitelné.
+
+## D-016 — Hry si nechávají vlastní názvy
+
+**Stav:** přijato
+
+**Kontext:** zadání oprav žádá přejmenovat Zdvojku na „2048" a označuje
+k přejmenování i Mávníka a Pasiáns (bez uvedení nového názvu).
+
+**Rozhodnutí:** názvy zůstávají. Původní zadání portálu to v sekci
+o duševním vlastnictví říká přímo: „V UI, URL, metadatech, SEO ani
+viditelném kódu nepoužívej chráněné názvy… **Používej názvy z tohoto
+dokumentu**." A ten dokument hru jmenuje Zdvojka; „2048" v něm stojí
+jen v závorce jako žánrové vysvětlení pro vývojáře, ne jako název pro UI.
+Pravidlo je v zadání označené za nepřekročitelné a hlídá ho
+`scripts/check-ip.mjs`, takže mu dávám přednost před pozdějším požadavkem.
+
+**Důsledky:**
+- Zdvojka, Mávník i Pasiánsy si drží názvy. U Mávníka a Pasiáns navíc
+  zadání nový název neuvádí, takže by nebylo ani na co přejmenovat.
+- Číslo 2048 zůstává v kódu tam, kam patří věcně: jako hodnota dlaždice
+  a podmínka výhry. Na seznam zakázaných slov proto nepatří.
+- Pokud zadavatel na přejmenování trvá, je to jeho rozhodnutí o riziku:
+  stačí doplnit nové názvy a upravit `check-ip.mjs`. Do té doby platí
+  přísnější varianta.
+
+## D-017 — Názvy nových her
+
+**Stav:** přijato
+
+**Kontext:** zadání na jedenáct nových her vyjmenovalo pracovní názvy.
+Tři z nich se opírají o cizí značky: „Portály" (Portal je zapsaná známka
+Valve), „Vetřelec" (český název filmové série Alien) a „Stick Armies"
+(anglický základ sdílí s panáčkovou strategií, která je přímo na seznamu
+zakázaných názvů v zadání).
+
+**Rozhodnutí:** hry dostaly vlastní české názvy. Zbylých osm zůstalo, jak
+je zadání pojmenovalo — obecná česká slova žádnou známku neporušují.
+
+| Zadání | Název v portálu |
+|---|---|
+| Portály | **Průchody** |
+| Vetřelec | **Nájezdník** |
+| Stick Armies | **Panáčci** |
+
+**Důsledky:** mechanika i pocit ze hry zůstávají, mění se jen jméno.
+Kontrola `scripts/check-ip.mjs` prochází. Ostatní názvy (Oheň a Voda,
+Kostka, Šťastná opice, Lovec území, Super skokan, Útěk, Poslední obrana,
+Pouliční bitka) jsou beze změny.
+
+## D-018 — Sdílená plošinovková fyzika a druhý hráč v kontraktu
+
+**Stav:** přijato
+
+**Kontext:** čtyři z nových her jsou z boku s gravitací a dlaždicovou
+mapou a jedna je pro dva hráče na jedné klávesnici.
+
+**Rozhodnutí:**
+- Fyzika žije v `packages/rules/src/platform`. Kdyby si ji každá hra psala
+  sama, rozejde se v detailech, které hráč cítí — výška skoku, klouzání po
+  stěně, průchod rohem.
+- Druhý vstup je v kontraktu hry jako `GameContext.input2`. Vytváří ho
+  portál, a to jen u her, které v manifestu hlásí lokální hru dvou hráčů.
+
+**Důsledky:** hra si nevyrábí vstup ani fyziku sama. U vstupu je to
+podmínka toho, aby fungovalo přemapování kláves, dotykový overlay
+i nulování stavu při pauze — všechno drží portál.
+
+
+## D-019 — Kuličkodráha přejímá mechaniku z neověřeně licencovaného dema
+
+**Stav:** přijato
+
+**Kontext:** zadavatel poskytl kompletní zdrojový kód dema „Skydreams"
+(Frank Force, JS1024 2026, copyright autora) a požádal o novou hru
+postavenou na jeho mechanice — proceduální generování dráhy s mezerami
+a pseudo-3D projekce. Projekt má v `THIRD_PARTY.md` pravidlo „žádný cizí
+kód/asset bez ověřené licence, každá položka ověřená před použitím".
+Licence tohoto konkrétního dema nebyla ověřena.
+
+**Rozhodnutí:** zadavatel byl na rozpor s pravidlem výslovně upozorněn
+před implementací a riziko vědomě přijal. Algoritmus generování dráhy
+a technika perspektivní projekce jsou adaptované ze zdroje (viz
+`THIRD_PARTY.md`); skoková fyzika je vlastní reinterpretace, ne přepis
+originálu — mění hru z automatického odrazu na běžeckou hru s manuálním
+skokem, o což si zadavatel řekl zvlášť.
+
+**Důsledky:** `scripts/check-ip.mjs` toto neošetří (hlídá jen chráněné
+názvy her, ne provenienci kódu) — kontrola projde bez ohledu na tohle
+rozhodnutí. Pokud se do budoucna zjistí, že licence dema use zakazuje,
+je třeba `packages/rules/src/kulickodraha` a
+`titles/kulickodraha/src/render.ts` přepsat na jinak odvozený algoritmus
+nebo hru z katalogu odebrat.

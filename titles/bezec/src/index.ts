@@ -58,25 +58,15 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     ctx.emit({ type: 'gameover', score: game.state.score, durationMs });
   };
 
-  const restart = (): void => {
-    game = createBezec(ctx.seed);
-    recorder = createReplayRecorder({
-      gameSlug: manifest.slug, mode: ctx.mode, seed: ctx.seed,
-      rulesVersion: manifest.rulesVersion, clientVersion: __APP_VERSION__,
-    });
-    finished = false;
-    lastScore = 0;
-    ctx.emit({ type: 'started' });
-  };
-
   const loop = createLoop(
     {
       update() {
         input.sample();
         // Skok po konci hry rovnou spustí nový běh — čekání na tlačítko
-        // v rychlé hře jen zdržuje.
+        // v rychlé hře jen zdržuje. O nový běh si musí říct portál:
+        // jen ten umí sehnat nový seed a nové run_id.
         if (finished) {
-          if (input.pressed('a') || input.pressed('up')) restart();
+          if (input.pressed('a') || input.pressed('up')) ctx.emit({ type: 'restart' });
           return;
         }
 
@@ -119,10 +109,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      restart();
-      loop.resume();
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onPointerDown);

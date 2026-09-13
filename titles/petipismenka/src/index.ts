@@ -7,6 +7,8 @@
  */
 
 import {
+  isEditableTarget,
+  paleta, herniPaleta,
   createLoop, createSurface, roundRect, centerText, withAlpha, createRng,
   easing, clamp01,
   type GameContext, type GameInstance, type GameModule,
@@ -34,9 +36,9 @@ const KEY_ROWS = [
 ];
 
 const COLORS: Record<LetterResult, string> = {
-  correct: '#2FD27A',
-  present: '#E3C355',
-  absent: '#2A3F73',
+  correct: paleta.zelena,
+  present: herniPaleta.zluta,
+  absent: paleta.linka,
 };
 
 export { manifest };
@@ -50,7 +52,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const cols = 5;
@@ -80,7 +82,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
       c.save();
       c.translate(x + tile / 2, y + tile / 2);
       c.scale(1, Math.max(0.04, scaleY));
-      c.fillStyle = flip > 0.5 ? COLORS[pattern[row]![col]!] : '#172A57';
+      c.fillStyle = flip > 0.5 ? COLORS[pattern[row]![col]!] : paleta.pult;
       roundRect(c, -tile / 2, -tile / 2, tile, tile, 4);
       c.fill();
       c.restore();
@@ -227,6 +229,8 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    // Psaní do vyhledávání v hlavičce není tip do hry.
+    if (isEditableTarget(event.target)) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       void submitGuess();
@@ -329,14 +333,14 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
           centerText(
             c, letter.toUpperCase(), 0, 2,
             '600 30px system-ui, sans-serif',
-            revealed && result !== 'absent' ? '#0F1C3F' : ctx.theme.text,
+            revealed && result !== 'absent' ? paleta.noc : ctx.theme.text,
           );
         }
 
         // Colorblind: symbol v rohu dlaždice navíc k barvě.
         if (ctx.theme.colorblind && revealed && result) {
           c.font = '600 13px system-ui, sans-serif';
-          c.fillStyle = result === 'absent' ? ctx.theme.textMuted : '#0F1C3F';
+          c.fillStyle = result === 'absent' ? ctx.theme.textMuted : paleta.noc;
           c.textAlign = 'right';
           c.textBaseline = 'top';
           c.fillText(RESULT_GLYPHS[result], TILE / 2 - 5, -TILE / 2 + 4);
@@ -355,7 +359,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       centerText(
         c, rect.key.toUpperCase(), rect.x + rect.w / 2, rect.y + rect.h / 2,
         '600 15px system-ui, sans-serif',
-        state && state !== 'absent' ? '#0F1C3F' : ctx.theme.text,
+        state && state !== 'absent' ? paleta.noc : ctx.theme.text,
       );
     }
 
@@ -408,17 +412,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      rows = [];
-      current = [];
-      keyboard = new Map();
-      finished = false;
-      won = false;
-      message = '';
-      answer = isDaily ? null : pickLocalAnswer();
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       window.removeEventListener('keydown', onKeyDown);

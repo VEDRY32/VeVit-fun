@@ -8,12 +8,26 @@
 import { createRng, type Rng } from '@vevit-games/engine/core';
 import { BIT, justPressed } from '../input-bits.js';
 
-export const HAD_RULES_VERSION = 1;
+export const HAD_RULES_VERSION = 2;
 
 export type HadMode = 'klasik' | 'bez-zdi' | 'bludiste' | 'dva-hraci';
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
 export interface Point { x: number; y: number }
+
+/**
+ * Bonusy, které se objevují vedle jídla.
+ * `magnet` na chvíli přitahuje jídlo k hlavě, `nuzky` zkrátí ocas na
+ * polovinu — obojí pomáhá v okamžiku, kdy je had dlouhý a zabydlený.
+ */
+export type BonusKind = 'magnet' | 'nuzky';
+
+export interface Bonus {
+  kind: BonusKind;
+  at: Point;
+  /** Kroků logiky, než bonus zmizí. */
+  ticks: number;
+}
 
 export interface HadConfig {
   width: number;
@@ -35,6 +49,10 @@ export interface HadState {
   /** Zlaté jablko mizí po pěti sekundách a dá pětinásobek bodů. */
   golden: Point | null;
   goldenTicks: number;
+  /** Bonus ležící na ploše; naráz je nejvýš jeden. */
+  bonus: Bonus | null;
+  /** Zbývající kroky účinku magnetu; 0 = neaktivní. */
+  magnetTicks: number;
   score: number;
   length: number;
   tick: number;
@@ -82,6 +100,8 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
     food: { x: 0, y: 0 },
     golden: null,
     goldenTicks: 0,
+    bonus: null,
+    magnetTicks: 0,
     score: 0,
     length: 3,
     tick: 0,
@@ -91,8 +111,19 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
     previousMask: 0,
   };
 
+  /** Kolik kroků bonus leží na ploše a jak dlouho magnet působí. */
+  const BONUS_LIFETIME = 8 * 60;
+  const MAGNET_DURATION = 8 * 60;
+  /** Zhruba každé páté jídlo přinese bonus. */
+  const BONUS_CHANCE = 1 / 5;
+
   const isWall = (p: Point): boolean => cfg.walls.some((w) => w.x === p.x && w.y === p.y);
   const isBody = (p: Point): boolean => state.body.some((b) => b.x === p.x && b.y === p.y);
+  const isTaken = (p: Point): boolean =>
+    isBody(p) || isWall(p)
+    || (p.x === state.food.x && p.y === state.food.y)
+    || (state.golden != null && p.x === state.golden.x && p.y === state.golden.y)
+    || (state.bonus != null && p.x === state.bonus.at.x && p.y === state.bonus.at.y);
 
   const placeFood = (): Point => {
     const free: Point[] = [];
@@ -114,6 +145,47 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
     const last = state.queue[state.queue.length - 1] ?? state.direction;
     if (direction === last || direction === OPPOSITE[last]) return;
     state.queue.push(direction);
+  };
+
+  /**
+   * Magnet nepřitahuje hada k jídlu, ale jídlo k hadovi: o jedno pole za
+   * krok, a jen na pole, které je volné. Tím zůstane pohyb po mřížce
+   * i bonus deterministický — žádné plynulé posouvání mimo mřížku.
+   */
+  const pullFood = (): void => {
+    const head = state.body[0]!;
+    const dx = Math.sign(head.x - state.food.x);
+    const dy = Math.sign(head.y - state.food.y);
+    if (dx === 0 && dy === 0) return;
+    // Vodorovně se přitahuje dřív; jinak by jídlo v úhlopříčce cukalo.
+    const candidates = Math.abs(head.x - state.food.x) >= Math.abs(head.y - state.food.y)
+      ? [{ x: state.food.x + dx, y: state.food.y }, { x: state.food.x, y: state.food.y + dy }]
+      : [{ x: state.food.x, y: state.food.y + dy }, { x: state.food.x + dx, y: state.food.y }];
+    for (const next of candidates) {
+      if (next.x === head.x && next.y === head.y) {
+        state.food = next;
+        return;
+      }
+      if (!isWall(next) && !isBody(next)) {
+        state.food = next;
+        return;
+      }
+    }
+  };
+
+  /** Nůžky useknou ocas na polovinu; had nikdy neklesne pod tři články. */
+  const cutTail = (): void => {
+    const keep = Math.max(3, Math.ceil(state.body.length / 2));
+    state.body.length = keep;
+    state.length = keep;
+  };
+
+  const spawnBonus = (): void => {
+    if (state.bonus != null) return;
+    if (!rng.chance(BONUS_CHANCE)) return;
+    const at = placeFood();
+    if (isTaken(at)) return;
+    state.bonus = { kind: rng.chance(0.5) ? 'magnet' : 'nuzky', at, ticks: BONUS_LIFETIME };
   };
 
   const advance = (): void => {
@@ -163,6 +235,7 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
         state.golden = placeFood();
         state.goldenTicks = 5 * 60;
       }
+      spawnBonus();
     } else if (state.golden && next.x === state.golden.x && next.y === state.golden.y) {
       state.score += 50;
       state.length++;
@@ -171,6 +244,14 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
     } else {
       state.body.pop();
     }
+
+    if (state.bonus && next.x === state.bonus.at.x && next.y === state.bonus.at.y) {
+      if (state.bonus.kind === 'magnet') state.magnetTicks = MAGNET_DURATION;
+      else cutTail();
+      state.bonus = null;
+    }
+
+    if (state.magnetTicks > 0) pullFood();
   };
 
   return {
@@ -191,6 +272,8 @@ export function createHad(seed: string, config: Partial<HadConfig> = {}): HadGam
       if (justPressed(mask, previous, BIT.right)) turn('right');
 
       if (state.golden && --state.goldenTicks <= 0) state.golden = null;
+      if (state.bonus && --state.bonus.ticks <= 0) state.bonus = null;
+      if (state.magnetTicks > 0) state.magnetTicks--;
 
       if (++state.moveTimer >= Math.round(state.interval)) {
         state.moveTimer = 0;

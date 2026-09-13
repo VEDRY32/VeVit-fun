@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createHladovec, type HladovecGame } from '../game.js';
 import { MAZES, MAZE_W, MAZE_H, validateMaze, startPosition, isOpen } from '../mazes.js';
+import { SPEEDS } from '../game.js';
 
 function idle(game: HladovecGame, n: number): void {
   for (let i = 0; i < n; i++) game.step(null);
@@ -290,7 +291,77 @@ describe('Hladovec — postup', () => {
     idle(game, 610);
     expect(game.state.fruit).not.toBeNull();
     game.state.fruit!.ticks = 1;
-    idle(game, 3);
+    // Hráč, který nic nedělá, může mezitím přijít o život; během oživování
+    // se krok přeskakuje, takže čekáme na zmizení, ne pevný počet kroků.
+    for (let i = 0; i < 300 && game.state.fruit; i++) game.step(null);
     expect(game.state.fruit).toBeNull();
+  });
+});
+
+describe('opravy chování', () => {
+  it('ovoce se pokládá na průchozí pole v každém bludišti', () => {
+    for (let level = 0; level < MAZES.length; level++) {
+      const game = createHladovec(`ovoce-${level}`);
+      game.loadLevel(level);
+      idle(game, 610);
+      const fruit = game.state.fruit;
+      expect(fruit, `úroveň ${level}`).not.toBeNull();
+      expect(game.passable(fruit!.x, fruit!.y), `úroveň ${level}`).toBe(true);
+    }
+  });
+
+  it('vystrašený Prachoš se od hráče vzdaluje', () => {
+    const game = createHladovec('utek');
+    const chaser = game.state.chasers[0]!;
+    chaser.inHouse = false;
+    chaser.mode = 'vystraseny';
+    chaser.frightenedTicks = 600;
+    // Postavíme ho na střed spodní chodby, kousek od hráče.
+    chaser.x = Math.round(game.state.playerX) - 2;
+    chaser.y = Math.round(game.state.playerY);
+
+    const distance = (): number =>
+      Math.abs(chaser.x - game.state.playerX) + Math.abs(chaser.y - game.state.playerY);
+    const before = distance();
+    for (let i = 0; i < 90; i++) game.step(null);
+    expect(chaser.mode).toBe('vystraseny');
+    expect(distance()).toBeGreaterThanOrEqual(before);
+  });
+
+  it('každá rychlost dělí pole na celý počet kroků', () => {
+    // Kdyby nedělila, postava by se netrefila do středu pole, nezvolila by
+    // na křižovatce nový směr a zůstala by viset ve slepé uličce.
+    for (const [name, speed] of Object.entries(SPEEDS)) {
+      const steps = 1 / speed;
+      expect(Math.abs(steps - Math.round(steps)), name).toBeLessThan(1e-9);
+    }
+  });
+
+  it('vystrašený Prachoš se hne z místa', () => {
+    // Regrese: tolerance „na středu pole" bývala větší než jeho krok,
+    // takže se po každém kroku přichytil zpátky a stál.
+    const game = createHladovec('pohyb');
+    const chaser = game.state.chasers[0]!;
+    chaser.inHouse = false;
+    chaser.mode = 'vystraseny';
+    chaser.frightenedTicks = 600;
+    // Ven z doupěte, na spodní chodbu — uvnitř doupěte se hýbat nemá.
+    chaser.x = Math.round(game.state.playerX) - 6;
+    chaser.y = Math.round(game.state.playerY);
+    const start = { x: chaser.x, y: chaser.y };
+    for (let i = 0; i < 60; i++) game.step(null);
+    expect(Math.abs(chaser.x - start.x) + Math.abs(chaser.y - start.y)).toBeGreaterThan(1);
+  });
+
+  it('střet s Prachošem stojí život, ne rovnou konec hry', () => {
+    const game = createHladovec('stret');
+    const chaser = game.state.chasers[0]!;
+    chaser.inHouse = false;
+    chaser.mode = 'pronasledovani';
+    chaser.x = game.state.playerX;
+    chaser.y = game.state.playerY;
+    game.step(null);
+    expect(game.state.lives).toBe(2);
+    expect(game.state.over).toBe(false);
   });
 });

@@ -31,10 +31,10 @@ export const MAZES: string[][] = [
     '#...................#',
     '#.###.###.#.###.###.#',
     '#o..#.....#.....#..o#',
-    '###.#.#.#####.#.#.###',
-    '#.....#...#...#.....#',
-    '#.#########.#######.#',
+    '#.#.#.#.#####.#.#.#.#',
+    '#.#...#...#...#...#.#',
     '#...................#',
+    '#####################',
   ],
   [
     '#####################',
@@ -78,6 +78,21 @@ export function validateMaze(maze: string[]): string[] {
     if (row.length !== MAZE_W) {
       problems.push(`Řádek ${i} má ${row.length} znaků místo ${MAZE_W}.`);
     }
+  });
+
+  // Okraj musí být zeď všude kromě tunelů. Chybějící spodní zeď je vidět
+  // jako díra v bludišti, i když hráč skrz ni neprojde (mimo pole se nedá).
+  const edgeProblem = (row: string, index: number, where: string): void => {
+    if ([...row].every((char) => char === '#')) return;
+    problems.push(`${where} (řádek ${index}) není zeď: ${row}`);
+  };
+  edgeProblem(maze[0] ?? '', 0, 'Horní okraj');
+  edgeProblem(maze[maze.length - 1] ?? '', maze.length - 1, 'Spodní okraj');
+  maze.forEach((row, i) => {
+    const left = row[0];
+    const right = row[row.length - 1];
+    if (left !== '#' && left !== 'T') problems.push(`Levý okraj řádku ${i} není zeď ani tunel.`);
+    if (right !== '#' && right !== 'T') problems.push(`Pravý okraj řádku ${i} není zeď ani tunel.`);
   });
   return problems;
 }

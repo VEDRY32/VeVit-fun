@@ -229,11 +229,51 @@ nápověda, která vysvětlí použitou techniku a nejdřív opraví špatně za
 19. Ukázka Hada se v hero pruhu 960×540 kreslila na mřížce 12×8, takže
     z hada byl nečitelný zelený válec; mřížka je teď 24×14.
 
+### Přechod na brand tokeny VeVit Games (D-015)
+
+Zadavatel dodal brand tokeny, které původní zadání předpokládalo jako
+možnost — tmavomodrá paleta byla jen fallback. Portál je teď téměř černý
+(`#08090C`) se smaragdovou primární a oranžovou sekundární barvou a jediným
+písmem Inter.
+
+Podstatná část práce nebyla v přebarvení rozhraní, ale v tom, že si 16 her
+psalo barvy jako hexy přímo v kódu — 90 výskytů ve 22 souborech. Zdrojem
+pravdy je proto nově `packages/engine/src/render/palette.ts`; hry i UI čtou
+ze stejného místa a test `packages/ui/src/__tests__/tokeny.test.ts` hlídá
+shodu s CSS proměnnými i kontrast podle WCAG AA.
+
+### Vlna oprav a jedenáct nových her
+
+Po přechodu na brand tokeny přišla velká vlna oprav (podrobně
+v `docs/ZPRAVA-OPRAVY.md`) a hned za ní jedenáct nových her ve stylu
+staré flashové éry.
+
+Většina hlášených chyb měla společnou příčinu ve sdílených vrstvách, ne
+v jednotlivých hrách. Nejdražší byly tři:
+
+1. Správce vstupu zajížděl ukazatel na hostitelský div hry, takže plátno
+   uvnitř přestalo dostávat `pointerup` — v půlce katalogu nefungovala myš.
+2. Krátký stisk klávesy, kratší než jeden krok logiky, se do vzorku vůbec
+   nedostal a ztratil se. Vyšlo to najevo až při hraní nové Kostky.
+3. Restart byl dvojí a ani jeden čistý: hra si nechávala starý seed
+   a run_id, portál staré skóre.
+
+Nové hry stojí na dvou sdílených věcech, které při nich vznikly:
+`packages/rules/src/platform` (plošinovková fyzika pro čtyři z nich) a
+`GameContext.input2` (druhá klávesnicová sada pro hru dvou hráčů na jednom
+počítači). Obojí je v portálu, ne ve hrách — hra si vstup ani fyziku
+nevyrábí sama.
+
 ### Stav katalogu
 
-Hotovo 16 z 57 her:
-Kostkopád, Pětipísmenka, Zdvojka, Hledač min, Sudoku, Pasiánsy (3 varianty),
-Had, Hladovec, Invaze, Cihlobijec, Mávník, Běžec, Pexeso, Čtyři v řadě,
-Piškvorky, Odpal.
+Hotovo 27 z 57 her.
 
-Zbývá 29 klonů z katalogu a všech 12 originálů VeVit.
+Původní dávka (16): Kostkopád, Pětipísmenka, Zdvojka, Hledač min, Sudoku,
+Pasiánsy (3 varianty), Had, Hladovec, Invaze, Cihlobijec, Mávník, Běžec,
+Pexeso, Čtyři v řadě, Piškvorky, Odpal.
+
+Nové hry ve stylu flashové éry (11): Kostka, Lovec území, Super skokan,
+Útěk, Poslední obrana, Oheň a Voda, Nájezdník, Šťastná opice, Průchody,
+Pouliční bitka, Panáčci.
+
+Zbývá 18 klonů z původního katalogu a všech 12 originálů VeVit.

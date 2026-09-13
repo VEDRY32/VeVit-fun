@@ -34,7 +34,7 @@ if (!host) throw new Error('Chybí #hra — offline.html je poškozený.');
 const surface = createSurface(host, {
   logicalWidth: WORLD_W,
   logicalHeight: WORLD_H,
-  letterbox: '#0F1C3F',
+  letterbox: '#08090C',
 });
 
 const input = createInput({

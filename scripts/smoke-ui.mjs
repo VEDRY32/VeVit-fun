@@ -15,7 +15,7 @@ const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:4173';
 const OUT = process.env.SHOT_DIR ?? resolve(process.cwd(), 'screenshots');
 const GAMES = [
   'kostkopad', 'petipismenka', 'zdvojka', 'had', 'hledac-min', 'pasiansy',
-  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec', 'piskvorky', 'odpal', 'sudoku',
+  'mavnik', 'pexeso', 'ctyri-v-rade', 'cihlobijec', 'invaze', 'hladovec', 'bezec', 'piskvorky', 'odpal', 'sudoku', 'kostka', 'lovec-uzemi', 'super-skokan', 'utek', 'posledni-obrana', 'ohen-a-voda', 'najezdnik', 'stastna-opice', 'pruchody', 'poulicni-bitka', 'panacci', 'kulickodraha',
 ];
 
 const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyX', 'KeyZ', 'KeyC'];
@@ -126,6 +126,17 @@ async function run() {
         console.error(`✗ ${label} · ${slug}: plátno se neobjevilo`);
         await page.close();
         continue;
+      }
+
+      // Přesně jedna hra, ne dvě. Spuštění hry čeká na modul a na běh ze
+      // serveru; když se dvě spuštění překryla, doběhla obě a namountovala
+      // každé vlastní instanci. Ta přebytečná běžela dál neviditelně, brala
+      // stejné klávesy a po svém dohrání shodila hráči živou partii.
+      // Čekání na plátno výš tohle nechytí — to je spokojené i se dvěma.
+      const instances = await page.locator('.hra__host canvas').count();
+      if (instances !== 1) {
+        failures++;
+        console.error(`✗ ${label} · ${slug}: běží ${instances} instancí hry místo jedné`);
       }
 
       // Herní plocha se už jednou smrskla na dva pixely kvůli CSS (položka

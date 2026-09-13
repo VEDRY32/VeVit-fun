@@ -7,7 +7,7 @@
 
 import { createRng, type Rng } from '@vevit-games/engine/core';
 
-export const INVAZE_RULES_VERSION = 1;
+export const INVAZE_RULES_VERSION = 2;
 
 export const FIELD_W = 520;
 export const FIELD_H = 620;
@@ -35,6 +35,42 @@ const SHIELD_COUNT = 4;
 const SHIELD_Y = FIELD_H - 130;
 
 export type EnemyKind = 'zakladni' | 'dvojstrelec' | 'stitovy';
+
+export type InvazeDifficulty = 'snadna' | 'stredni' | 'tezka';
+
+export interface InvazeSettings {
+  /** Kroků mezi posuny plné formace — čím víc, tím pomalejší sestup. */
+  descentSlow: number;
+  /** Kroků mezi posuny, když zbývá poslední nepřítel. */
+  descentFast: number;
+  /** O kolik pixelů formace klesne u kraje. */
+  descentStep: number;
+  /** Základní šance na výstřel nepřítele v jednom kroku. */
+  enemyFire: number;
+  lives: number;
+}
+
+/**
+ * Tempo sestupu drží obtížnost. Původní jediná hodnota byla i na první
+ * vlně rychlejší než „těžká" níž — formace dosedla dřív, než hráč stihl
+ * vystřílet druhou řadu.
+ */
+export const DIFFICULTIES: Record<InvazeDifficulty, InvazeSettings> = {
+  snadna: { descentSlow: 54, descentFast: 9, descentStep: 10, enemyFire: 0.007, lives: 4 },
+  stredni: { descentSlow: 44, descentFast: 7, descentStep: 13, enemyFire: 0.010, lives: 3 },
+  tezka: { descentSlow: 34, descentFast: 5, descentStep: 16, enemyFire: 0.014, lives: 3 },
+};
+
+/**
+ * Přehřátí zbraně. Střelba je rychlá, ale ne nekonečná: každý výstřel
+ * přidá teplo, které postupně klesá. Na stropu se zbraň zablokuje a pustí
+ * až po vychladnutí pod `HEAT_READY` — hráč tak musí dávkovat.
+ */
+export const HEAT_PER_SHOT = 0.18;
+export const HEAT_DECAY = 0.0045;
+export const HEAT_READY = 0.3;
+/** Kroků mezi dvěma výstřely, i když je zbraň studená. */
+export const SHOOT_COOLDOWN = 8;
 
 export interface Enemy {
   col: number;
@@ -80,6 +116,9 @@ export interface InvazeState {
   tick: number;
   moveTimer: number;
   shootCooldown: number;
+  /** Zahřátí zbraně 0–1; na jedničce se zbraň zablokuje. */
+  heat: number;
+  overheated: boolean;
   /** Krátká nehybnost po zásahu hráče. */
   respawnTimer: number;
   over: boolean;
@@ -87,6 +126,7 @@ export interface InvazeState {
 
 export interface InvazeGame {
   readonly state: InvazeState;
+  readonly settings: InvazeSettings;
   readonly rulesVersion: number;
   step(left: boolean, right: boolean, fire: boolean): void;
   /** Obdélník nepřítele v souřadnicích pole. */
@@ -104,8 +144,9 @@ function kindForRow(row: number, wave: number): EnemyKind {
   return 'zakladni';
 }
 
-export function createInvaze(seed: string): InvazeGame {
+export function createInvaze(seed: string, difficulty: InvazeDifficulty = 'stredni'): InvazeGame {
   const rng: Rng = createRng(seed);
+  const settings = DIFFICULTIES[difficulty] ?? DIFFICULTIES.stredni;
 
   const makeShields = (): Shield[] =>
     Array.from({ length: SHIELD_COUNT }, (_, i) => ({
@@ -139,11 +180,13 @@ export function createInvaze(seed: string): InvazeGame {
     shields: makeShields(),
     saucer: { x: -60, vx: 2.2, active: false },
     playerX: FIELD_W / 2,
-    lives: 3,
+    lives: settings.lives,
     score: 0,
     wave: 1,
     tick: 0,
     moveTimer: 0,
+    heat: 0,
+    overheated: false,
     shootCooldown: 0,
     respawnTimer: 0,
     over: false,
@@ -163,7 +206,8 @@ export function createInvaze(seed: string): InvazeGame {
     const alive = aliveCount();
     const total = FORMATION_COLS * FORMATION_ROWS;
     const ratio = alive / total;
-    return Math.max(4, Math.round(4 + ratio * 28));
+    const span = settings.descentSlow - settings.descentFast;
+    return Math.max(settings.descentFast, Math.round(settings.descentFast + ratio * span));
   };
 
   const advanceFormation = (): void => {
@@ -177,7 +221,7 @@ export function createInvaze(seed: string): InvazeGame {
     // U kraje formace sestoupí a otočí se.
     if ((state.direction === 1 && right + 12 >= FIELD_W) || (state.direction === -1 && left - 12 <= 0)) {
       state.direction = state.direction === 1 ? -1 : 1;
-      state.formationY += 16;
+      state.formationY += settings.descentStep;
     } else {
       state.formationX += state.direction * 12;
     }
@@ -252,6 +296,7 @@ export function createInvaze(seed: string): InvazeGame {
   return {
     state,
     rulesVersion: INVAZE_RULES_VERSION,
+    settings,
     enemyRect,
     aliveCount,
 
@@ -269,10 +314,14 @@ export function createInvaze(seed: string): InvazeGame {
       state.playerX = Math.max(PLAYER_W / 2, Math.min(FIELD_W - PLAYER_W / 2, state.playerX));
 
       if (state.shootCooldown > 0) state.shootCooldown--;
-      // Jedna střela hráče na obrazovce — drží to tempo hry.
-      if (fire && state.shootCooldown === 0 && !state.shots.some((s) => s.fromPlayer)) {
+      state.heat = Math.max(0, state.heat - HEAT_DECAY);
+      if (state.overheated && state.heat <= HEAT_READY) state.overheated = false;
+
+      if (fire && !state.overheated && state.shootCooldown === 0) {
         state.shots.push({ x: state.playerX, y: PLAYER_Y, vy: -SHOT_SPEED, fromPlayer: true });
-        state.shootCooldown = 10;
+        state.shootCooldown = SHOOT_COOLDOWN;
+        state.heat = Math.min(1, state.heat + HEAT_PER_SHOT);
+        if (state.heat >= 1) state.overheated = true;
       }
 
       if (++state.moveTimer >= moveInterval()) {
@@ -281,7 +330,7 @@ export function createInvaze(seed: string): InvazeGame {
       }
 
       // Nepřátelé střílí tím častěji, čím výš je vlna.
-      if (rng.chance(0.012 + state.wave * 0.003)) enemyShoot();
+      if (rng.chance(settings.enemyFire + state.wave * 0.003)) enemyShoot();
 
       // Létající talíř: občas přeletí shora a dá bonus.
       if (!state.saucer.active && rng.chance(0.0018)) {

@@ -23,6 +23,18 @@ import { manifest as bezec } from '@titles/bezec/src/manifest.js';
 import { manifest as piskvorky } from '@titles/piskvorky/src/manifest.js';
 import { manifest as odpal } from '@titles/odpal/src/manifest.js';
 import { manifest as sudoku } from '@titles/sudoku/src/manifest.js';
+import { manifest as kostka } from '@titles/kostka/src/manifest.js';
+import { manifest as lovecUzemi } from '@titles/lovec-uzemi/src/manifest.js';
+import { manifest as superSkokan } from '@titles/super-skokan/src/manifest.js';
+import { manifest as utek } from '@titles/utek/src/manifest.js';
+import { manifest as posledniObrana } from '@titles/posledni-obrana/src/manifest.js';
+import { manifest as ohenAVoda } from '@titles/ohen-a-voda/src/manifest.js';
+import { manifest as najezdnik } from '@titles/najezdnik/src/manifest.js';
+import { manifest as stastnaOpice } from '@titles/stastna-opice/src/manifest.js';
+import { manifest as pruchody } from '@titles/pruchody/src/manifest.js';
+import { manifest as poulicniBitka } from '@titles/poulicni-bitka/src/manifest.js';
+import { manifest as panacci } from '@titles/panacci/src/manifest.js';
+import { manifest as kulickodraha } from '@titles/kulickodraha/src/manifest.js';
 
 export interface CatalogEntry {
   manifest: GameManifest;
@@ -46,6 +58,18 @@ export const catalog: CatalogEntry[] = [
   { manifest: piskvorky, load: () => import('@titles/piskvorky/src/index.js') as Promise<GameModule> },
   { manifest: odpal, load: () => import('@titles/odpal/src/index.js') as Promise<GameModule> },
   { manifest: sudoku, load: () => import('@titles/sudoku/src/index.js') as Promise<GameModule> },
+  { manifest: kostka, load: () => import('@titles/kostka/src/index.js') as Promise<GameModule> },
+  { manifest: lovecUzemi, load: () => import('@titles/lovec-uzemi/src/index.js') as Promise<GameModule> },
+  { manifest: superSkokan, load: () => import('@titles/super-skokan/src/index.js') as Promise<GameModule> },
+  { manifest: utek, load: () => import('@titles/utek/src/index.js') as Promise<GameModule> },
+  { manifest: posledniObrana, load: () => import('@titles/posledni-obrana/src/index.js') as Promise<GameModule> },
+  { manifest: ohenAVoda, load: () => import('@titles/ohen-a-voda/src/index.js') as Promise<GameModule> },
+  { manifest: najezdnik, load: () => import('@titles/najezdnik/src/index.js') as Promise<GameModule> },
+  { manifest: stastnaOpice, load: () => import('@titles/stastna-opice/src/index.js') as Promise<GameModule> },
+  { manifest: pruchody, load: () => import('@titles/pruchody/src/index.js') as Promise<GameModule> },
+  { manifest: poulicniBitka, load: () => import('@titles/poulicni-bitka/src/index.js') as Promise<GameModule> },
+  { manifest: panacci, load: () => import('@titles/panacci/src/index.js') as Promise<GameModule> },
+  { manifest: kulickodraha, load: () => import('@titles/kulickodraha/src/index.js') as Promise<GameModule> },
 ];
 
 export const bySlug = (slug: string): CatalogEntry | undefined =>

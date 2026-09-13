@@ -6,6 +6,7 @@
  */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -19,18 +20,18 @@ const HEADER = 48;
 const VIEW_W = MAZE_W * CELL;
 const VIEW_H = MAZE_H * CELL + HEADER;
 
-const WALL_COLOR = '#3A56B8';
-const PLAYER_COLOR = '#2FD27A';
+const WALL_COLOR = herniPaleta.kamen;
+const PLAYER_COLOR = paleta.zelena;
 
 /** Každý Prachoš má vlastní barvu; povahu navíc prozradí tvar chomáče. */
 const CHASER_COLORS: Record<ChaserKind, string> = {
-  lovec: '#FF5F6D',
-  nadbihac: '#FFB224',
-  nahoda: '#C77DFF',
-  plachy: '#4FD1E8',
+  lovec: herniPaleta.cervena,
+  nadbihac: herniPaleta.zluta,
+  nahoda: herniPaleta.fialova,
+  plachy: herniPaleta.tyrkys,
 };
 
-const FRIGHTENED_COLOR = '#8FA6FF';
+const FRIGHTENED_COLOR = herniPaleta.indigo;
 
 export { manifest };
 
@@ -59,7 +60,7 @@ function drawChaser(
 ): void {
   if (chaser.mode === 'navrat') {
     // Sněžený Prachoš je jen pár očí, které spěchají domů.
-    ctx.fillStyle = '#EEF2FF';
+    ctx.fillStyle = paleta.text;
     for (const dx of [-0.3, 0.3]) {
       ctx.beginPath();
       ctx.arc(x + dx * radius, y, radius * 0.26, 0, Math.PI * 2);
@@ -85,7 +86,7 @@ function drawChaser(
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.fillStyle = frightened ? '#0F1C3F' : '#EEF2FF';
+  ctx.fillStyle = frightened ? paleta.noc : paleta.text;
   for (const dx of [-0.28, 0.28]) {
     ctx.beginPath();
     ctx.arc(x + dx * radius, y - radius * 0.1, radius * 0.2, 0, Math.PI * 2);
@@ -111,7 +112,7 @@ function drawPlayer(
   ctx.fill();
 
   const look = { up: [0, -0.2], down: [0, 0.2], left: [-0.2, 0], right: [0.2, 0] }[direction]!;
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   for (const dx of [-0.28, 0.28]) {
     ctx.beginPath();
     ctx.arc(
@@ -127,7 +128,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const cell = Math.min(width / 11, height / 7);
@@ -142,7 +143,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const progress = (t * 1.6) % 11;
   for (let i = 1; i < 10; i++) {
     if (i < progress) continue;
-    c.fillStyle = '#E9D8A6';
+    c.fillStyle = herniPaleta.zluta;
     c.beginPath();
     c.arc(originX + (i + 0.5) * cell, originY + 3.5 * cell, cell * 0.11, 0, Math.PI * 2);
     c.fill();
@@ -229,14 +230,14 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       for (let x = 0; x < MAZE_W; x++) {
         const { sx, sy } = toScreen(x, y);
         if (game.state.dots[y]?.[x]) {
-          c.fillStyle = '#E9D8A6';
+          c.fillStyle = herniPaleta.zluta;
           c.beginPath();
           c.arc(sx, sy, 2.6, 0, Math.PI * 2);
           c.fill();
         } else if (game.state.powerDots[y]?.[x]) {
           // Velká tečka pulzuje, aby byla na první pohled jiná.
           const pulse = ctx.theme.reducedMotion ? 1 : 1 + Math.sin(game.state.tick * 0.12) * 0.18;
-          c.fillStyle = '#FFB224';
+          c.fillStyle = herniPaleta.zluta;
           c.beginPath();
           c.arc(sx, sy, 6 * pulse, 0, Math.PI * 2);
           c.fill();
@@ -246,11 +247,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
     if (game.state.fruit) {
       const { sx, sy } = toScreen(game.state.fruit.x, game.state.fruit.y);
-      c.fillStyle = '#FF6B81';
+      c.fillStyle = herniPaleta.ruzova;
       c.beginPath();
       c.arc(sx, sy, 8, 0, Math.PI * 2);
       c.fill();
-      c.strokeStyle = '#5FD9A0';
+      c.strokeStyle = herniPaleta.zelena;
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(sx, sy - 8);
@@ -276,7 +277,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.fillRect(0, 0, VIEW_W, VIEW_H);
       centerText(c, game.state.won ? 'Bludiště vysbíráno' : 'Prachoši tě dostali',
         VIEW_W / 2, VIEW_H / 2, '600 26px system-ui, sans-serif',
-        game.state.won ? PLAYER_COLOR : '#FF5F6D');
+        game.state.won ? PLAYER_COLOR : herniPaleta.cervena);
     }
   };
 
@@ -337,13 +338,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createHladovec(ctx.seed);
-      finished = false;
-      lastScore = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onDown);

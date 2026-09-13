@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createCihlobijec, FIELD_W, FIELD_H, PADDLE_Y, BRICK_TOP, BRICK_H, BRICK_W,
+  createCihlobijec, FIELD_W, FIELD_H, PADDLE_Y, BRICK_TOP, BRICK_H, BRICK_W, PADDLE_MAX_SPEED,
   type CihlobijecGame,
 } from '../game.js';
 
@@ -266,5 +266,29 @@ describe('Cihlobijec — životy a vylepšení', () => {
     game.state.effects.laser = 600;
     game.step(FIELD_W / 2, false, true);
     expect(game.state.lasers).toHaveLength(1);
+  });
+});
+
+describe('pádlo', () => {
+  it('dojede k cíli do šesti kroků a trefí ho přesně', () => {
+    const game = createCihlobijec('padlo');
+    const target = FIELD_W - 60;
+    let steps = 0;
+    for (let i = 0; i < 20; i++) {
+      game.step(target, false, false);
+      steps++;
+      if (Math.abs(game.state.paddleX - target) < 1) break;
+    }
+    expect(steps).toBeLessThanOrEqual(6);
+    // Dřív pádlo k cíli jen asymptoticky dojíždělo a nikdy na něm nesedělo.
+    game.step(target, false, false);
+    expect(game.state.paddleX).toBe(target);
+  });
+
+  it('neteleportuje se přes celé pole v jednom kroku', () => {
+    const game = createCihlobijec('padlo-strop');
+    const start = game.state.paddleX;
+    game.step(FIELD_W, false, false);
+    expect(Math.abs(game.state.paddleX - start)).toBeLessThanOrEqual(PADDLE_MAX_SPEED + 0.001);
   });
 });

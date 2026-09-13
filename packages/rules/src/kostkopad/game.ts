@@ -27,6 +27,10 @@ export const ROWS = VISIBLE_ROWS + HIDDEN_ROWS;
 export const LOCK_DELAY_TICKS = 30; // 500 ms
 export const MAX_LOCK_RESETS = 15;
 export const SPAWN_DELAY_TICKS = 6;
+
+/** Ultra končí po dvou minutách, Sprint po čtyřiceti řadách. */
+export const ULTRA_TICKS = 2 * 60 * 60;
+export const SPRINT_LINES = 40;
 export const PREVIEW_COUNT = 5;
 
 export type KostkopadMode = 'maraton' | 'sprint40' | 'ultra' | 'denni' | 'souboj';
@@ -364,7 +368,7 @@ export function createKostkopad(seed: string, config: Partial<KostkopadConfig> =
       else applyGarbage();
     }
 
-    if (cfg.mode === 'sprint40' && state.lines >= 40) {
+    if (cfg.mode === 'sprint40' && state.lines >= SPRINT_LINES) {
       state.won = true;
       return;
     }
@@ -461,7 +465,7 @@ export function createKostkopad(seed: string, config: Partial<KostkopadConfig> =
       }
 
       // Ultra končí po dvou minutách.
-      if (cfg.mode === 'ultra' && state.tick >= 2 * 60 * 60) {
+      if (cfg.mode === 'ultra' && state.tick >= ULTRA_TICKS) {
         state.over = true;
         return;
       }

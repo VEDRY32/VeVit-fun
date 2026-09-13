@@ -1,10 +1,11 @@
 /** Had — plynulá zaoblená křivka s očima, ne řada čtverců. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createReplayRecorder, withAlpha, centerText,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
-import { createHad, type HadMode, type Dir } from '@vevit-games/rules/had';
+import { createHad, type HadMode, type Dir, type BonusKind } from '@vevit-games/rules/had';
 import { manifest } from './manifest.js';
 
 const VIEW = 600;
@@ -87,7 +88,7 @@ function drawSnakeBody(
   ctx.arc((head.x + 0.5) * cell, (head.y + 0.5) * cell, cell * 0.42, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#0F1C3F';
+  ctx.fillStyle = paleta.noc;
   for (const offset of [-0.16, 0.16]) {
     ctx.beginPath();
     ctx.arc((head.x + 0.5 + offset) * cell, (head.y + 0.42) * cell, cell * 0.09, 0, Math.PI * 2);
@@ -100,7 +101,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   /**
@@ -143,12 +144,12 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   );
 
   const food = perimeter[(head + 20) % perimeter.length]!;
-  c.fillStyle = '#FFB224';
+  c.fillStyle = herniPaleta.zluta;
   c.beginPath();
   c.arc((food.x + 0.5) * cell, (food.y + 0.5) * cell, cell * 0.28, 0, Math.PI * 2);
   c.fill();
 
-  drawSnakeBody(c, body, '#2FD27A', cell);
+  drawSnakeBody(c, body, paleta.zelena, cell);
   c.restore();
 }
 
@@ -219,7 +220,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     c.fill();
 
     if (game.state.golden) {
-      c.fillStyle = '#F4D35E';
+      c.fillStyle = herniPaleta.zluta;
       c.beginPath();
       c.arc(
         (game.state.golden.x + 0.5) * CELL, (game.state.golden.y + 0.5) * CELL,
@@ -227,7 +228,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       );
       c.fill();
       // Ubývající prstenec ukazuje, kolik času zbývá.
-      c.strokeStyle = '#F4D35E';
+      c.strokeStyle = herniPaleta.zluta;
       c.lineWidth = 2;
       c.beginPath();
       c.arc(
@@ -238,13 +239,55 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.stroke();
     }
 
-    drawSnakeBody(surface.ctx, game.state.body, '#2FD27A', CELL);
+    const bonus = game.state.bonus;
+    if (bonus) {
+      const bx = (bonus.at.x + 0.5) * CELL;
+      const by = (bonus.at.y + 0.5) * CELL;
+      const color = bonus.kind === 'magnet' ? herniPaleta.tyrkys : herniPaleta.ruzova;
+      c.strokeStyle = color;
+      c.lineWidth = 2.5;
+      c.lineCap = 'round';
+      if (bonus.kind === 'magnet') {
+        // Podkova otevřená dolů, hroty dokreslené plnou barvou.
+        c.beginPath();
+        c.arc(bx, by - CELL * 0.04, CELL * 0.26, Math.PI, 0);
+        c.stroke();
+        c.fillStyle = color;
+        c.fillRect(bx - CELL * 0.32, by - CELL * 0.04, CELL * 0.12, CELL * 0.22);
+        c.fillRect(bx + CELL * 0.2, by - CELL * 0.04, CELL * 0.12, CELL * 0.22);
+      } else {
+        // Nůžky: dvě zkřížené čepele a očko.
+        c.beginPath();
+        c.moveTo(bx - CELL * 0.26, by - CELL * 0.26);
+        c.lineTo(bx + CELL * 0.18, by + CELL * 0.18);
+        c.moveTo(bx + CELL * 0.26, by - CELL * 0.26);
+        c.lineTo(bx - CELL * 0.18, by + CELL * 0.18);
+        c.stroke();
+      }
+    }
+
+    drawSnakeBody(surface.ctx, game.state.body, paleta.zelena, CELL);
+
+    // Magnet je vidět na hlavě, ne jen v HUD — hráč se dívá na hada.
+    if (game.state.magnetTicks > 0) {
+      const head = game.state.body[0]!;
+      c.strokeStyle = withAlpha(herniPaleta.tyrkys, 0.6);
+      c.lineWidth = 2;
+      c.beginPath();
+      c.arc((head.x + 0.5) * CELL, (head.y + 0.5) * CELL, CELL * 0.9, 0, Math.PI * 2);
+      c.stroke();
+    }
 
     centerText(
       c, String(game.state.score), VIEW / 2, 26,
       '600 22px system-ui, sans-serif', withAlpha(ctx.theme.text, 0.6),
     );
   };
+
+  // Bonus se sebere uvnitř kroku pravidel; tady si držíme, co na ploše
+  // leželo před ním, aby šlo poznat sebrání od vypršení času.
+  let bonusBefore: BonusKind | null = null;
+  let bonusAt = { x: -1, y: -1 };
 
   const loop = createLoop(
     {
@@ -261,6 +304,18 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
           lastScore = game.state.score;
           ctx.emit({ type: 'score', value: lastScore });
         }
+
+        // Bonus nemění skóre, takže vlastní zvuk musí hlídat jeho zmizení
+        // pod hlavou — jinak by sebrání proběhlo úplně potichu.
+        const bonusNow = game.state.bonus?.kind ?? null;
+        if (bonusBefore != null && bonusNow == null) {
+          const head = game.state.body[0]!;
+          if (head.x === bonusAt.x && head.y === bonusAt.y) {
+            ctx.audio.play(bonusBefore === 'magnet' ? 'levelUp' : 'clear');
+          }
+        }
+        bonusBefore = bonusNow;
+        if (game.state.bonus) bonusAt = game.state.bonus.at;
         if (game.state.over) finish();
       },
       render() {
@@ -295,17 +350,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = makeGame();
-      recorder = createReplayRecorder({
-        gameSlug: manifest.slug, mode, seed: ctx.seed,
-        rulesVersion: manifest.rulesVersion, clientVersion: __APP_VERSION__,
-      });
-      finished = false;
-      lastScore = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onDown);

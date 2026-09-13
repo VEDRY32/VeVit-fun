@@ -61,12 +61,42 @@ describe('Invaze — hráč', () => {
     expect(game.state.playerX).toBeLessThanOrEqual(FIELD_W - PLAYER_W / 2);
   });
 
-  it('naráz letí jen jedna střela hráče', () => {
-    const game = createInvaze('jedna-strela');
-    for (let i = 0; i < 40; i++) {
+  it('držená střelba zbraň přehřeje a pak ji pustí až po vychladnutí', () => {
+    const game = createInvaze('prehrati');
+    let shots = 0;
+    for (let i = 0; i < 200; i++) {
+      const before = game.state.shots.length;
       game.step(false, false, true);
-      expect(game.state.shots.filter((s) => s.fromPlayer).length).toBeLessThanOrEqual(1);
+      if (game.state.shots.length > before) shots++;
+      if (game.state.overheated) break;
     }
+    expect(game.state.overheated).toBe(true);
+    // Dokud je zbraň přehřátá, další výstřel nevyjde.
+    const during = game.state.shots.length;
+    game.step(false, false, true);
+    expect(game.state.shots.length).toBeLessThanOrEqual(during);
+    expect(shots).toBeGreaterThan(2);
+
+    // Po vychladnutí se zase střílí.
+    for (let i = 0; i < 400 && game.state.overheated; i++) game.step(false, false, false);
+    expect(game.state.overheated).toBe(false);
+    const cool = game.state.shots.length;
+    game.step(false, false, true);
+    expect(game.state.shots.length).toBeGreaterThan(cool);
+  });
+
+  it('obtížnost mění tempo sestupu i počet životů', () => {
+    const easy = createInvaze('obtiznost', 'snadna');
+    const hard = createInvaze('obtiznost', 'tezka');
+    expect(easy.settings.descentSlow).toBeGreaterThan(hard.settings.descentSlow);
+    expect(easy.settings.enemyFire).toBeLessThan(hard.settings.enemyFire);
+    expect(easy.state.lives).toBeGreaterThanOrEqual(hard.state.lives);
+
+    const drop = (game: ReturnType<typeof createInvaze>): number => {
+      for (let i = 0; i < 600; i++) game.step(false, false, false);
+      return game.state.formationY;
+    };
+    expect(drop(easy)).toBeLessThan(drop(hard));
   });
 
   it('zásah hráče ubere život a vyčistí střely', () => {

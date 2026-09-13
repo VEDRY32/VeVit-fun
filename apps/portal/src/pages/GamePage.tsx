@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createAudioBus, createInput, createRng, createStorage, dailySeed,
-  DEFAULT_KEYMAP,
+  DEFAULT_KEYMAP, PLAYER2_KEYMAP,
   type GameEvent, type GameInstance, type GameModule, type Action,
   type InputManager, type Keymap,
 } from '@vevit-games/engine';
@@ -17,6 +17,7 @@ import {
 import { completeChallenge, currentStreak } from '../lib/daily.js';
 import { evaluateBadges, EMPTY_STATS, type Badge } from '../lib/badges.js';
 import { navigate } from '../lib/router.js';
+import { createRunTracker } from '../lib/run-tracker.js';
 import type { I18n } from '../lib/i18n.js';
 
 interface GamePageProps {
@@ -41,9 +42,14 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   // Vstup patří portálu, ne hře: obsluhuje ho i dotykový overlay a nastavení
   // přemapování kláves, které jsou mimo hru.
   const inputRef = useRef<InputManager | null>(null);
+  // Druhá klávesnicová sada pro hry dvou hráčů na jednom počítači.
+  const input2Ref = useRef<InputManager | null>(null);
   const [input, setInput] = useState<InputManager | null>(null);
 
   const [phase, setPhase] = useState<Phase>('loading');
+  // Pauza, restart i události ze hry se ptají na aktuální fázi mimo render.
+  const phaseRef = useRef<Phase>('loading');
+  phaseRef.current = phase;
   const [mode, setMode] = useState<string>(() => {
     const requested = new URLSearchParams(window.location.search).get('rezim');
     const available = entry?.manifest.modes.map((m) => m.id) ?? [];
@@ -56,6 +62,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   const [usedActions, setUsedActions] = useState<ReadonlySet<Action>>(new Set());
   const [needsRotate, setNeedsRotate] = useState(false);
   const [freshBadges, setFreshBadges] = useState<Badge[]>([]);
+  // Restart volají i hry samy (událost `restart`), a to zevnitř běžící
+  // smyčky — přes ref, aby se do nich nemusela protahovat aktuální funkce.
+  const restartRef = useRef<() => void>(() => {});
 
   // Počty odehraných partií drží profil i odznaky; ukládají se lokálně.
   const playsRef = useRef<Record<string, number>>(loadPlays());
@@ -63,6 +72,10 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
   const audio = useMemo(() => createAudioBus({
     master: settings.master, music: settings.music, sfx: settings.sfx, muted: settings.muted,
   }), []);
+
+  // Hlídá, které spuštění hry je ještě aktuální. Bez něj po sobě překryvná
+  // spuštění nechají běžet osiřelou hru, která pak hráči shodí živou partii.
+  const runTracker = useMemo(() => createRunTracker(), []);
 
   const manifest = entry?.manifest;
   const modeSpec = manifest?.modes.find((m) => m.id === mode);
@@ -103,23 +116,32 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     const host = hostRef.current;
     if (!entry || !host) return;
 
+    // Doběhnout smí jen poslední spuštění. Mezi úklidem staré hry a `mount()`
+    // se čeká na herní modul a na běh ze serveru; kdyby se za tu dobu spustila
+    // hra znovu, namountovaly by se dvě a ta přebytečná by běžela dál.
+    const run = runTracker.begin();
+
     instanceRef.current?.destroy();
     instanceRef.current = null;
     inputRef.current?.destroy();
     inputRef.current = null;
+    input2Ref.current?.destroy();
+    input2Ref.current = null;
     host.replaceChildren();
     setPhase('loading');
     setResult(null);
     setScore(0);
+    setUsedActions(new Set());
 
     let module: GameModule;
     try {
       module = moduleRef.current ?? (await entry.load());
       moduleRef.current = module;
     } catch {
-      setPhase('error');
+      if (run.current) setPhase('error');
       return;
     }
+    if (!run.current) return;
 
     const storage = createStorage({
       gameSlug: entry.manifest.slug,
@@ -134,6 +156,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     const handle = mode === 'denni'
       ? { runId: null, seed: dailySeed(entry.manifest.slug, pragueToday()) }
       : await scores.start(mode);
+    if (!run.current) return;
 
     /**
      * Po dohrané partii se zapíše denní výzva, přepočítají odznaky
@@ -169,11 +192,19 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     };
 
     const onEvent = (event: GameEvent): void => {
+      // Pojistka: nahrazený běh do portálu nemluví. Jeho `gameover` by jinak
+      // ukončil partii, kterou hráč právě hraje.
+      if (!run.current) return;
       switch (event.type) {
         case 'started':
           setPhase('playing');
           break;
         case 'paused':
+          // Smyčka pauzuje i sama (ztráta fokusu). Dohranou partii tím ale
+          // nesmí přebít — jinak by výsledek zmizel pod překryvem pauzy.
+          if (phaseRef.current !== 'playing') break;
+          inputRef.current?.reset();
+          input2Ref.current?.reset();
           setPhase('paused');
           break;
         case 'score':
@@ -188,6 +219,9 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           setResult({ score: event.score, won: true, stats: event.stats });
           setPhase('finished');
           recordOutcome(event.score);
+          break;
+        case 'restart':
+          restartRef.current();
           break;
         case 'error':
           setPhase('error');
@@ -212,8 +246,21 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     inputRef.current = gameInput;
     setInput(gameInput);
 
+    // Hry pro dva na jedné klávesnici dostanou druhou sadu (WASD).
+    const local2P = entry.manifest.players.local && entry.manifest.players.max >= 2;
+    const secondInput = local2P
+      ? createInput({
+        target: host,
+        logicalWidth: entry.manifest.aspect.width,
+        logicalHeight: entry.manifest.aspect.height,
+        keymap: PLAYER2_KEYMAP,
+      })
+      : null;
+    input2Ref.current = secondInput;
+
     instanceRef.current = module.mount(host, {
       input: gameInput,
+      ...(secondInput ? { input2: secondInput } : {}),
       audio,
       rng: createRng(handle.seed),
       storage,
@@ -236,19 +283,62 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
 
     recordPlayed(entry.manifest.slug);
   }, [
-    entry, mode, audio, i18n,
+    entry, mode, audio, i18n, runTracker,
     settings.reducedMotion, settings.colorblind, settings.lowQuality, settings.keymap,
   ]);
 
   useEffect(() => {
     void startGame();
     return () => {
+      // Zruší i spuštění, které je zrovna na půl cesty — jinak by domountovalo
+      // hru, kterou už nikdo neuklidí.
+      runTracker.cancel();
       instanceRef.current?.destroy();
       instanceRef.current = null;
       inputRef.current?.destroy();
       inputRef.current = null;
+      input2Ref.current?.destroy();
+      input2Ref.current = null;
     };
+  }, [startGame, runTracker]);
+
+  // Zvuková sběrnice drží AudioContext. Bez úklidu by po pár přechodech
+  // mezi hrami narazila na limit prohlížeče a zvuk by přestal hrát.
+  useEffect(() => () => audio.destroy(), [audio]);
+
+  /**
+   * Pauza, pokračování a restart mají jedno místo pro všechny tři vstupy
+   * (lišta, Escape, překryv). Vstup se u každého z nich nuluje: stisk, který
+   * padl mimo běžící smyčku, by se jinak odbavil až po návratu do hry.
+   */
+  const pauseGame = useCallback((): void => {
+    if (phaseRef.current !== 'playing') return;
+    instanceRef.current?.pause();
+    inputRef.current?.reset();
+    input2Ref.current?.reset();
+    setPhase('paused');
+  }, []);
+
+  const resumeGame = useCallback((): void => {
+    if (phaseRef.current !== 'paused') return;
+    inputRef.current?.reset();
+    input2Ref.current?.reset();
+    instanceRef.current?.resume();
+    setPhase('playing');
+  }, []);
+
+  /**
+   * Restart je nové spuštění hry, ne jen `instance.restart()`: ten nechá
+   * portálu staré skóre a hře starý běh i seed, takže další výsledek by
+   * server odmítl. `startGame` sáhne pro nový běh a postaví hru od nuly.
+   */
+  const restartGame = useCallback((): void => {
+    void startGame();
   }, [startGame]);
+
+  useEffect(() => {
+    restartRef.current = restartGame;
+  }, [restartGame]);
 
   // Nápověda ovládání mizí po řádcích, jak hráč akce zkouší.
   useEffect(() => {
@@ -262,18 +352,16 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
     void fetchLeaderboard(entry.manifest.slug, mode).then(setLeaderboard);
   }, [entry, mode]);
 
-  // Escape pauzuje hru — jediná klávesa, kterou portál hrám bere.
+  // Escape je jediná klávesa, kterou portál hrám bere: přepíná pauzu.
+  // Pokračování řeší překryv pauzy sám, tady se jen pauzuje.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
-      if (phase === 'playing') {
-        instanceRef.current?.pause();
-        setPhase('paused');
-      }
+      pauseGame();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase]);
+  }, [pauseGame]);
 
   if (!entry || !manifest) {
     return (
@@ -312,10 +400,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           <button
             type="button"
             className="hra__ikona"
-            onClick={() => {
-              instanceRef.current?.pause();
-              setPhase('paused');
-            }}
+            onClick={pauseGame}
           >
             <span aria-hidden="true">⏸</span>
             <span className="vizualne-skryte">Pauza</span>
@@ -419,15 +504,12 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
 
       <PauseOverlay
         open={phase === 'paused'}
-        onResume={() => {
-          instanceRef.current?.resume();
-          setPhase('playing');
-        }}
-        onRestart={() => {
-          instanceRef.current?.restart();
-          setPhase('playing');
-        }}
-        onControls={() => document.querySelector('.ovladani')?.scrollIntoView({ behavior: 'smooth' })}
+        controls={(moduleRef.current?.controlHints ?? []).map((hint) => ({
+          keys: hint.keys,
+          label: hint.label,
+        }))}
+        onResume={resumeGame}
+        onRestart={restartGame}
         onSettings={() => navigate(`/${i18n.locale}/nastaveni`)}
         onLeave={() => navigate(`/${i18n.locale}/`)}
       />
@@ -454,10 +536,7 @@ export function GamePage({ slug, i18n, settings, onSettingsChange }: GamePagePro
           label,
           value: String(value),
         }))}
-        onRestart={() => {
-          instanceRef.current?.restart();
-          setPhase('playing');
-        }}
+        onRestart={restartGame}
         onLeave={() => navigate(`/${i18n.locale}/`)}
       />
 

@@ -8,7 +8,7 @@
 import { createRng, distanceField, type Rng, type GridLike } from '@vevit-games/engine/core';
 import { MAZES, MAZE_W, MAZE_H, startPosition } from './mazes.js';
 
-export const HLADOVEC_RULES_VERSION = 1;
+export const HLADOVEC_RULES_VERSION = 2;
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type ChaserKind = 'lovec' | 'nadbihac' | 'nahoda' | 'plachy';
@@ -82,10 +82,25 @@ const OPPOSITE: Record<Dir, Dir> = {
 };
 
 /** Rychlost v polích za krok logiky. */
-const PLAYER_SPEED = 0.11;
-const CHASER_SPEED = 0.095;
-const FRIGHTENED_SPEED = 0.055;
-const RETURN_SPEED = 0.2;
+/*
+ * Rychlosti jsou zlomky 1/n, ne desetinná čísla. Postava se tím trefí
+ * přesně do středu pole (po n krocích ujde právě jedno pole), což je
+ * podmínka pro `atCenter` — a tedy pro volbu nového směru na křižovatce.
+ * Tempo je oproti první verzi zhruba o čtvrtinu nižší; na bludiště 21×21
+ * byla hra zbytečně hektická.
+ */
+const PLAYER_SPEED = 1 / 12;
+const CHASER_SPEED = 1 / 14;
+const FRIGHTENED_SPEED = 1 / 24;
+const RETURN_SPEED = 1 / 7;
+
+/** Všechny rychlosti pohromadě — test hlídá, že dělí pole beze zbytku. */
+export const SPEEDS = {
+  hrac: PLAYER_SPEED,
+  prachos: CHASER_SPEED,
+  vystraseny: FRIGHTENED_SPEED,
+  navrat: RETURN_SPEED,
+} as const;
 
 /** Délky fází rozptýlení a pronásledování v krocích logiky. */
 const PHASE_LENGTHS = [7 * 60, 20 * 60, 7 * 60, 20 * 60, 5 * 60, 20 * 60, 5 * 60];
@@ -190,7 +205,34 @@ export function createHladovec(seed: string, startLevel = 0): HladovecGame {
 
   loadLevel(startLevel);
 
-  const atCenter = (value: number): boolean => Math.abs(value - Math.round(value)) < 0.06;
+  /**
+   * Je postava přesně na středu pole?
+   *
+   * Tolerance musí být menší než nejmenší krok. S dřívější hodnotou 0,06
+   * byla větší než krok vystrašeného Prachoše (0,055): ten se po každém
+   * kroku „přichytil" zpátky na střed, takže se po velké tečce vůbec
+   * nehnul z místa — vypadalo to, že před hráčem neutíká.
+   */
+  const atCenter = (value: number): boolean => Math.abs(value - Math.round(value)) < 1e-4;
+
+  /**
+   * Nejbližší průchozí pole k zadanému bodu.
+   * Ovoce se dřív pokládalo na natvrdo spočítaný řádek, který je v prvním
+   * bludišti zeď — leželo tedy mimo hru a nešlo sebrat.
+   */
+  const nearestOpen = (x: number, y: number): Point => {
+    for (let radius = 0; radius < Math.max(MAZE_W, MAZE_H); radius++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (passable(nx, ny)) return { x: nx, y: ny };
+        }
+      }
+    }
+    return { x, y };
+  };
 
   const canGo = (x: number, y: number, dir: Dir): boolean => {
     const delta = DELTA[dir];
@@ -238,8 +280,28 @@ export function createHladovec(seed: string, startLevel = 0): HladovecGame {
     if (options.length === 0) return OPPOSITE[chaser.direction];
     if (options.length === 1) return options[0]!;
 
-    // Vystrašený Prachoš utíká, takže volí náhodně.
-    if (chaser.mode === 'vystraseny') return options[rng.int(0, options.length)]!;
+    // Vystrašený Prachoš utíká: z možných směrů volí ten, který ho od
+    // hráče vzdálí nejvíc. Dřív volil náhodně, takže hráči často vběhl
+    // rovnou do cesty a útěk nebyl poznat.
+    if (chaser.mode === 'vystraseny') {
+      const px = Math.round(state.playerX);
+      const py = Math.round(state.playerY);
+      const field = distanceField(grid, { x: px, y: py });
+      let best = options[rng.int(0, options.length)]!;
+      let bestDistance = -1;
+      for (const dir of options) {
+        const delta = DELTA[dir];
+        const nx = ((cx + delta.x) % MAZE_W + MAZE_W) % MAZE_W;
+        const ny = cy + delta.y;
+        if (ny < 0 || ny >= MAZE_H) continue;
+        const distance = field[ny * MAZE_W + nx] ?? -1;
+        if (distance > bestDistance) {
+          bestDistance = distance;
+          best = dir;
+        }
+      }
+      return best;
+    }
 
     const target = targetFor(chaser);
     const clampedTarget = {
@@ -377,7 +439,8 @@ export function createHladovec(seed: string, startLevel = 0): HladovecGame {
           state.fruit = null;
         }
       } else if (state.tick % 1200 === 600) {
-        state.fruit = { x: Math.floor(MAZE_W / 2), y: MAZE_H - 6, ticks: FRUIT_TICKS };
+        const at = nearestOpen(Math.floor(MAZE_W / 2), MAZE_H - 6);
+        state.fruit = { x: at.x, y: at.y, ticks: FRUIT_TICKS };
       }
 
       // --- Prachoši ---

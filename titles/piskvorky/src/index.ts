@@ -7,6 +7,7 @@
  */
 
 import {
+  herniPaleta,
   createLoop, createSurface, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -18,8 +19,11 @@ const VIEW_H = 620;
 const HEADER = 56;
 const CELL = 34;
 
+/* Papír a inkoust: hra se hraje na sešitovém papíře, takže její plocha je
+   světlá a barvy z herní palety (laděné na tmavé pozadí) by na ní zmizely.
+   Tyhle čtyři odstíny jsou proto lokální — jinam v portálu nepatří. */
 const PAPER = '#F4F1E6';
-const GRID = '#B9C7DC';
+const GRID = herniPaleta.kamen;
 const INK_X = '#2B4C9B';
 const INK_O = '#C0392F';
 
@@ -226,8 +230,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
     c.strokeStyle = GRID;
     c.beginPath();
-    const originX = toScreen(0, 0).x % CELL;
-    const originY = toScreen(0, 0).y % CELL;
+    // `toScreen` vrací střed pole. Čáry proto musí ležet o půl buňky vedle,
+    // jinak by procházely přímo středy a značky by seděly na průsečících
+    // místo uvnitř čtverců.
+    const originX = (toScreen(0, 0).x + CELL / 2) % CELL;
+    const originY = (toScreen(0, 0).y + CELL / 2) % CELL;
     for (let x = originX - CELL; x < VIEW_W + CELL; x += CELL) {
       c.moveTo(Math.round(x) + 0.5, boardTop);
       c.lineTo(Math.round(x) + 0.5, VIEW_H);
@@ -281,7 +288,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
     if (game.state.moves.length === 0) {
       centerText(c, 'Klikni kamkoliv a začni', VIEW_W / 2, boardTop + boardH / 2 + CELL * 2.5,
-        '500 14px system-ui, sans-serif', withAlpha('#2B4C9B', 0.5));
+        '500 14px system-ui, sans-serif', withAlpha(INK_X, 0.5));
     }
   };
 
@@ -345,17 +352,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createPiskvorky(ctx.seed);
-      finished = false;
-      aiTimer = 0;
-      cameraX = 0;
-      cameraY = 0;
-      cursorX = 0;
-      cursorY = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerup', onPointerUp);

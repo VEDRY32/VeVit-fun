@@ -6,6 +6,7 @@
  */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createParticles, createRng,
   roundRect, centerText, withAlpha,
   type GameContext, type GameInstance, type GameModule, type Keymap,
@@ -13,14 +14,14 @@ import {
 import {
   createInvaze, FIELD_W, FIELD_H, PLAYER_Y, PLAYER_W, PLAYER_H,
   SHIELD_COLS, SHIELD_ROWS, SHIELD_CELL, SHIELD_Y,
-  type Enemy, type EnemyKind,
+  type Enemy, type EnemyKind, type InvazeDifficulty,
 } from '@vevit-games/rules/invaze';
 import { manifest } from './manifest.js';
 
 const ENEMY_COLORS: Record<EnemyKind, string> = {
-  zakladni: '#8FA6FF',
-  dvojstrelec: '#FFB224',
-  stitovy: '#FF6B81',
+  zakladni: herniPaleta.indigo,
+  dvojstrelec: herniPaleta.zluta,
+  stitovy: herniPaleta.ruzova,
 };
 
 export { manifest };
@@ -83,7 +84,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const scale = Math.min(width / FIELD_W, height / FIELD_H);
@@ -102,7 +103,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   }
 
   const shipX = FIELD_W / 2 + Math.sin(t * 1.4) * 140;
-  c.fillStyle = '#2FD27A';
+  c.fillStyle = paleta.zelena;
   c.beginPath();
   c.moveTo(shipX, PLAYER_Y);
   c.lineTo(shipX + PLAYER_W / 2, PLAYER_Y + PLAYER_H);
@@ -110,7 +111,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   c.closePath();
   c.fill();
 
-  c.fillStyle = '#EEF2FF';
+  c.fillStyle = paleta.text;
   c.fillRect(shipX - 1.5, PLAYER_Y - ((t * 260) % 300), 3, 12);
 
   c.restore();
@@ -122,7 +123,8 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   });
   const { input } = ctx;
 
-  let game = createInvaze(ctx.seed);
+  const difficulty = (ctx.mode === 'snadna' || ctx.mode === 'tezka' ? ctx.mode : 'stredni') as InvazeDifficulty;
+  let game = createInvaze(ctx.seed, difficulty);
   const particles = ctx.theme.lowQuality
     ? null
     : createParticles(createRng(`${ctx.seed}:castice`), 220);
@@ -159,8 +161,29 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     c.font = '600 20px system-ui, sans-serif';
     c.fillText(String(game.state.score), FIELD_W / 2, 22);
     c.textAlign = 'right';
-    c.fillStyle = '#2FD27A';
+    c.fillStyle = paleta.zelena;
     c.fillText('▲'.repeat(Math.max(0, game.state.lives)), FIELD_W - 14, 22);
+
+    // Ukazatel zahřátí zbraně. Musí být u lodi, ne v hlavičce — hráč se
+    // v boji dívá dolů a nahoru nemá kdy koukat.
+    const barW = 120;
+    const barX = (FIELD_W - barW) / 2;
+    const barY = PLAYER_Y + PLAYER_H + 14;
+    c.fillStyle = withAlpha(ctx.theme.text, 0.12);
+    roundRect(c, barX, barY, barW, 6, 3);
+    c.fill();
+    const heatColor = game.state.overheated
+      ? herniPaleta.cervena
+      : game.state.heat > 0.7 ? herniPaleta.oranzova : paleta.zelena;
+    c.fillStyle = heatColor;
+    roundRect(c, barX, barY, Math.max(2, barW * game.state.heat), 6, 3);
+    c.fill();
+    if (game.state.overheated) {
+      c.textAlign = 'center';
+      c.font = '600 12px system-ui, sans-serif';
+      c.fillStyle = herniPaleta.cervena;
+      c.fillText('PŘEHŘÁTO', FIELD_W / 2, barY + 20);
+    }
 
     const phase = Math.floor(game.state.tick / 20);
     for (const enemy of game.state.enemies as Enemy[]) {
@@ -170,7 +193,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     }
 
     if (game.state.saucer.active) {
-      c.fillStyle = '#C77DFF';
+      c.fillStyle = herniPaleta.fialova;
       c.beginPath();
       c.ellipse(game.state.saucer.x, 52, 22, 8, 0, 0, Math.PI * 2);
       c.fill();
@@ -183,7 +206,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       for (let row = 0; row < SHIELD_ROWS; row++) {
         for (let col = 0; col < SHIELD_COLS; col++) {
           if (!shield.cells[row]![col]) continue;
-          c.fillStyle = '#35E0CF';
+          c.fillStyle = herniPaleta.tyrkys;
           c.fillRect(shield.x + col * SHIELD_CELL, SHIELD_Y + row * SHIELD_CELL, SHIELD_CELL, SHIELD_CELL);
         }
       }
@@ -192,14 +215,14 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     particles?.render(c);
 
     for (const shot of game.state.shots) {
-      c.fillStyle = shot.fromPlayer ? ctx.theme.text : '#FF6B81';
+      c.fillStyle = shot.fromPlayer ? ctx.theme.text : herniPaleta.ruzova;
       c.fillRect(shot.x - 1.5, shot.y - 6, 3, 12);
     }
 
     // Loď bliká, dokud běží odpočet po zásahu.
     const hidden = game.state.respawnTimer > 0 && Math.floor(game.state.tick / 6) % 2 === 0;
     if (!hidden) {
-      c.fillStyle = '#2FD27A';
+      c.fillStyle = paleta.zelena;
       c.beginPath();
       c.moveTo(game.state.playerX, PLAYER_Y);
       c.lineTo(game.state.playerX + PLAYER_W / 2, PLAYER_Y + PLAYER_H);
@@ -218,7 +241,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
       c.fillStyle = withAlpha(ctx.theme.background, 0.82);
       c.fillRect(0, 0, FIELD_W, FIELD_H);
       centerText(c, 'Konec invaze', FIELD_W / 2, FIELD_H / 2,
-        '600 34px system-ui, sans-serif', '#FF6B81');
+        '600 34px system-ui, sans-serif', herniPaleta.ruzova);
     }
   };
 
@@ -256,15 +279,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createInvaze(ctx.seed);
-      particles?.clear();
-      finished = false;
-      lastScore = 0;
-      lastAlive = game.aliveCount();
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.destroy();

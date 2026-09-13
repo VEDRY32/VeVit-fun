@@ -15,6 +15,7 @@ export * from './audio/zzfx.js';
 export * from './audio/sequencer.js';
 export * from './audio/audio.js';
 
+export * from './render/palette.js';
 export * from './render/surface.js';
 export * from './render/draw.js';
 

@@ -1,6 +1,7 @@
 /** Odpal — čistá geometrie, barva podle strany. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, centerText, withAlpha, roundRect,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -12,10 +13,10 @@ import { manifest } from './manifest.js';
 
 /** Každá strana má vlastní barvu — ve čtyřech je to jediné rozlišení. */
 const SIDE_COLORS: Record<Side, string> = {
-  vlevo: '#2FD27A',
-  vpravo: '#FF5F6D',
-  nahore: '#8FA6FF',
-  dole: '#FFB224',
+  vlevo: paleta.zelena,
+  vpravo: herniPaleta.cervena,
+  nahore: herniPaleta.indigo,
+  dole: herniPaleta.zluta,
 };
 
 export { manifest };
@@ -56,7 +57,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const scale = Math.min(width / FIELD_W, height / FIELD_H);
@@ -87,7 +88,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   roundRect(c, FIELD_W - 36, FIELD_H - ballY - 38, 12, 76, 6);
   c.fill();
 
-  c.fillStyle = '#EEF2FF';
+  c.fillStyle = paleta.text;
   c.beginPath();
   c.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2);
   c.fill();
@@ -242,12 +243,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createOdpal(ctx.seed, config.odpal, config.difficulty);
-      finished = false;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointermove', onPointerMove);

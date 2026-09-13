@@ -182,22 +182,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     resume() {
       loop.resume();
     },
-    restart() {
-      game = createKostkopad(ctx.seed, { mode });
-      recorder = createReplayRecorder({
-        gameSlug: manifest.slug,
-        mode,
-        seed: ctx.seed,
-        rulesVersion: manifest.rulesVersion,
-        clientVersion: __APP_VERSION__,
-      });
-      particles?.clear();
-      finished = false;
-      lastScore = 0;
-      startTick = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.destroy();

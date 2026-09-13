@@ -1,6 +1,7 @@
 /** Mávník — papírový drak nad městem s paralaxou. */
 
 import {
+  paleta, herniPaleta,
   createLoop, createSurface, createReplayRecorder, roundRect, centerText, withAlpha, shade,
   type GameContext, type GameInstance, type GameModule, type Keymap,
 } from '@vevit-games/engine';
@@ -9,8 +10,8 @@ import { toFloat } from '@vevit-games/engine';
 import { manifest } from './manifest.js';
 
 const BIRD_SCREEN_X = toFloat(BIRD_X);
-const PIPE_COLOR = '#3B4E86';
-const SKY_TOP = '#15224A';
+const PIPE_COLOR = herniPaleta.kamen;
+const SKY_TOP = paleta.pultSvetly;
 
 export { manifest };
 
@@ -50,7 +51,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
 
   const gradient = c.createLinearGradient(0, 0, 0, height);
   gradient.addColorStop(0, SKY_TOP);
-  gradient.addColorStop(1, '#0F1C3F');
+  gradient.addColorStop(1, paleta.noc);
   c.fillStyle = gradient;
   c.fillRect(0, 0, width, height);
 
@@ -59,8 +60,8 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   c.scale(scale, scale);
   const view = width / scale;
 
-  drawSkyline(c, t * 14, WORLD_H, 150, '#1B2A55', 46);
-  drawSkyline(c, t * 26, WORLD_H, 100, '#223269', 34);
+  drawSkyline(c, t * 14, WORLD_H, 150, paleta.pultSvetly, 46);
+  drawSkyline(c, t * 26, WORLD_H, 100, paleta.linka, 34);
 
   // Dvojice stožárů, které pomalu ujíždějí doleva.
   for (let i = 0; i < 3; i++) {
@@ -77,7 +78,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   c.save();
   c.translate(BIRD_SCREEN_X, y);
   c.rotate(tilt);
-  c.fillStyle = '#FFB224';
+  c.fillStyle = herniPaleta.zluta;
   c.beginPath();
   c.moveTo(16, 0);
   c.lineTo(0, -14);
@@ -85,7 +86,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   c.lineTo(0, 14);
   c.closePath();
   c.fill();
-  c.strokeStyle = withAlpha('#FFB224', 0.7);
+  c.strokeStyle = withAlpha(herniPaleta.zluta, 0.7);
   c.lineWidth = 2;
   c.beginPath();
   c.moveTo(-14, 0);
@@ -135,8 +136,8 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
     // Paralaxa: vzdálenější vrstva se posouvá pomaleji.
     if (!ctx.theme.lowQuality) {
-      drawSkyline(c, scroll * 0.25, WORLD_H, 150, '#1B2A55', 46);
-      drawSkyline(c, scroll * 0.55, WORLD_H, 100, '#223269', 34);
+      drawSkyline(c, scroll * 0.25, WORLD_H, 150, paleta.pultSvetly, 46);
+      drawSkyline(c, scroll * 0.55, WORLD_H, 100, paleta.linka, 34);
     }
 
     for (const rect of game.pipeRects()) {
@@ -216,18 +217,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = createMavnik(ctx.seed, mode);
-      recorder = createReplayRecorder({
-        gameSlug: manifest.slug, mode, seed: ctx.seed,
-        rulesVersion: manifest.rulesVersion, clientVersion: __APP_VERSION__,
-      });
-      finished = false;
-      lastScore = 0;
-      scroll = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onPointerDown);

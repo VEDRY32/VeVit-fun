@@ -9,6 +9,27 @@ import { useEffect, useState } from 'react';
 import type { Locale } from '@vevit-games/engine';
 import { DEFAULT_LOCALE, LOCALES } from './i18n.js';
 
+/**
+ * Náhledové sestavení (`VITE_HASH_ROUTER=1`) běží pod cizí cestou —
+ * statický hosting nám neumí přesměrovat `/cs/had` zpět na index.html.
+ * V tom režimu proto celá cesta žije za mřížkou a dokument si drží
+ * svoji původní URL, takže se relativní cesty k chunkům nerozbijí.
+ * Produkce tuhle větev nikdy nevidí: podmínka se při buildu vyhodnotí
+ * na konstantu a tree-shaking ji odstraní.
+ */
+const HASH_ROUTES = import.meta.env.VITE_HASH_ROUTER === '1';
+
+function currentPath(): { pathname: string; search: string } {
+  if (!HASH_ROUTES) {
+    return { pathname: window.location.pathname, search: window.location.search };
+  }
+  const raw = window.location.hash.slice(1) || '/';
+  const at = raw.indexOf('?');
+  return at === -1
+    ? { pathname: raw, search: '' }
+    : { pathname: raw.slice(0, at), search: raw.slice(at) };
+}
+
 export type Route =
   | { name: 'home'; locale: Locale }
   | { name: 'game'; locale: Locale; slug: string }
@@ -49,22 +70,26 @@ export const hrefFor = (route: Route): string => {
 };
 
 export function navigate(href: string): void {
-  window.history.pushState(null, '', href);
+  window.history.pushState(null, '', HASH_ROUTES ? `#${href}` : href);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 export function useRoute(): Route {
-  const [route, setRoute] = useState<Route>(() =>
-    parseRoute(window.location.pathname, window.location.search),
-  );
+  const [route, setRoute] = useState<Route>(() => {
+    const { pathname, search } = currentPath();
+    return parseRoute(pathname, search);
+  });
 
   useEffect(() => {
     const update = (): void => {
-      setRoute(parseRoute(window.location.pathname, window.location.search));
+      const { pathname, search } = currentPath();
+      setRoute(parseRoute(pathname, search));
       // Nová stránka musí začít nahoře, jinak přistane hráč v půlce.
       window.scrollTo(0, 0);
     };
     window.addEventListener('popstate', update);
+    // Tlačítko zpět mění v režimu mřížky jen hash, popstate nemusí přijít.
+    if (HASH_ROUTES) window.addEventListener('hashchange', update);
 
     // Odkazy uvnitř portálu se odbaví bez načtení celé stránky.
     const onClick = (event: MouseEvent): void => {
@@ -81,6 +106,7 @@ export function useRoute(): Route {
 
     return () => {
       window.removeEventListener('popstate', update);
+      if (HASH_ROUTES) window.removeEventListener('hashchange', update);
       document.removeEventListener('click', onClick);
     };
   }, []);

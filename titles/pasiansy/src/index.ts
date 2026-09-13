@@ -6,13 +6,15 @@
  */
 
 import {
-  createLoop, createSurface, centerText, withAlpha,
+  paleta, herniPaleta,
+  createLoop, createSurface, centerText, withAlpha, easing,
   type GameContext, type GameInstance, type GameModule,
 } from '@vevit-games/engine';
 import { createPasiansy, type Variant, type Card } from '@vevit-games/rules/pasiansy';
 import { manifest } from './manifest.js';
 import {
-  VIEW_W, VIEW_H, CARD_W, CARD_H, drawCard, drawSlot, layoutFor, cardOffsetY,
+  VIEW_W, VIEW_H, CARD_W, CARD_H, STACK_FACE_DOWN,
+  drawCard, drawSlot, layoutFor, cardOffsetY,
   type CardTheme, type PileLayout,
 } from './render.js';
 
@@ -47,12 +49,12 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   const c = canvas.getContext('2d');
   if (!c) return;
   const { width, height } = canvas;
-  c.fillStyle = '#0F1C3F';
+  c.fillStyle = paleta.noc;
   c.fillRect(0, 0, width, height);
 
   const theme: CardTheme = {
-    accent: '#E9D8A6', background: '#0F1C3F', surface: '#172A57',
-    text: '#EEF2FF', textMuted: '#A3B1D6', colorblind: false,
+    accent: herniPaleta.zluta, background: paleta.noc, surface: paleta.pult,
+    text: paleta.text, textMuted: paleta.textTlumeny, colorblind: false,
   };
 
   // Vějíř karet, který se pomalu rozevírá — klidná, karetní ukázka.
@@ -132,16 +134,52 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 
       for (let index = pile.cards.length - 1; index >= 0; index--) {
         const cardY = spot.y + cardOffsetY(pile, index, spot.spread);
-        // Karta pod jinou je vidět jen v pruhu nahoře.
+        // Karta pod jinou je vidět jen v pruhu nahoře; v balíčku vůbec.
         const visibleHeight = index === pile.cards.length - 1
           ? CARD_H
-          : (pile.cards[index + 1]!.faceUp ? spot.spread : 13);
+          : spot.spread === 0
+            ? 0
+            : (pile.cards[index + 1]!.faceUp ? spot.spread : STACK_FACE_DOWN);
         if (x >= spot.x && x <= spot.x + CARD_W && y >= cardY && y <= cardY + visibleHeight) {
           return { pileId: spot.id, index };
         }
       }
     }
     return null;
+  };
+
+  /**
+   * Animace přesunu. Karty mají stabilní `id`, takže stačí porovnat, kde
+   * ležely před tahem a kde leží po něm — a to funguje pro líznutí,
+   * poklepání i tažení najednou, bez zvláštní větve pro každý z nich.
+   */
+  const ANIM_TICKS = 8;
+  const anims = new Map<number, { fromX: number; fromY: number; ticks: number }>();
+
+  const positions = (): Map<number, { x: number; y: number }> => {
+    const out = new Map<number, { x: number; y: number }>();
+    for (const spot of layout) {
+      const pile = game.state.piles[spot.id];
+      if (!pile) continue;
+      pile.cards.forEach((card, index) => {
+        out.set(card.id, { x: spot.x, y: spot.y + cardOffsetY(pile, index, spot.spread) });
+      });
+    }
+    return out;
+  };
+
+  const withAnimation = (action: () => boolean): boolean => {
+    if (ctx.theme.reducedMotion) return action();
+    const before = positions();
+    const done = action();
+    if (!done) return done;
+    for (const [id, to] of positions()) {
+      const from = before.get(id);
+      if (!from) continue;
+      if (Math.abs(from.x - to.x) < 0.5 && Math.abs(from.y - to.y) < 0.5) continue;
+      anims.set(id, { fromX: from.x, fromY: from.y, ticks: ANIM_TICKS });
+    }
+    return done;
   };
 
   const finish = (): void => {
@@ -156,6 +194,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     });
     ctx.emit({ type: 'win', score, durationMs, stats: { tahy: game.state.moves } });
   };
+
+  const flying: {
+    card: Card; x: number; y: number;
+    anim: { fromX: number; fromY: number; ticks: number }; isHint: boolean;
+  }[] = [];
 
   const draw = (): void => {
     const c = surface.ctx;
@@ -179,9 +222,26 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         const card = pile.cards[index]!;
         const y = spot.y + cardOffsetY(pile, index, spot.spread);
         const isHint = hintTicks > 0 && hintMove?.from === spot.id && index >= pile.cards.length - hintMove.count;
+        const anim = anims.get(card.id);
+        if (anim) {
+          // Letící karty se kreslí až nakonec, aby nemizely pod hromádkami.
+          flying.push({ card, x: spot.x, y, anim, isHint });
+          continue;
+        }
         drawCard(c, card, spot.x, y, theme, isHint);
       }
     }
+
+    for (const item of flying) {
+      const t = easing.outCubic(1 - item.anim.ticks / ANIM_TICKS);
+      drawCard(
+        c, item.card,
+        item.anim.fromX + (item.x - item.anim.fromX) * t,
+        item.anim.fromY + (item.y - item.anim.fromY) * t,
+        theme, item.isHint,
+      );
+    }
+    flying.length = 0;
 
     // Cíl nápovědy se orámuje taky, ať je vidět, kam tah vede.
     if (hintTicks > 0 && hintMove) {
@@ -240,7 +300,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     if (!hit) return;
 
     if (hit.pileId === 'zasoba') {
-      if (game.draw()) ctx.audio.play('click');
+      if (withAnimation(() => game.draw())) ctx.audio.play('click');
       return;
     }
     if (hit.index < 0) return;
@@ -284,9 +344,10 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     if (dragging) {
       const target = cardAt(dragging.x + CARD_W / 2, dragging.y + CARD_H / 2)
         ?? cardAt(local.x, local.y);
-      const applied = target
-        ? game.applyMove({ from: dragging.from, to: target.pileId, count: dragging.count })
-        : false;
+      const move = target
+        ? { from: dragging.from, to: target.pileId, count: dragging.count }
+        : null;
+      const applied = move ? withAnimation(() => game.applyMove(move)) : false;
       ctx.audio.play(applied ? 'click' : 'error');
       dragging = null;
       pressedAt = null;
@@ -296,7 +357,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
     if (pressedAt) {
       // Krátké klepnutí pošle kartu na nejlepší možné místo.
       const { pileId, index } = pressedAt.hit;
-      const moved = game.autoMove(pileId, index);
+      const moved = withAnimation(() => game.autoMove(pileId, index));
       ctx.audio.play(moved ? 'click' : 'tick');
       pressedAt = null;
     }
@@ -313,8 +374,12 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
         if (!finished) game.tick();
         if (hintTicks > 0) hintTicks--;
 
+        for (const [id, anim] of anims) {
+          if (--anim.ticks <= 0) anims.delete(id);
+        }
+
         if (input.pressed('b')) {
-          if (game.undo()) ctx.audio.play('tick');
+          if (withAnimation(() => game.undo())) ctx.audio.play('tick');
         }
         if (input.pressed('x')) {
           hintMove = game.hint();
@@ -322,7 +387,11 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
           ctx.audio.play(hintMove ? 'click' : 'error');
         }
         if (input.pressed('a')) {
-          const moved = game.autoFinish();
+          let moved = 0;
+          withAnimation(() => {
+            moved = game.autoFinish();
+            return moved > 0;
+          });
           if (moved > 0) ctx.audio.play('levelUp');
         }
 
@@ -347,17 +416,6 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
   return {
     pause: () => loop.pause(),
     resume: () => loop.resume(),
-    restart() {
-      game = makeGame();
-      layout = layoutFor(settings.variant);
-      finished = false;
-      dragging = null;
-      pressedAt = null;
-      hintTicks = 0;
-      lastScore = 0;
-      loop.resume();
-      ctx.emit({ type: 'started' });
-    },
     destroy() {
       loop.stop();
       surface.canvas.removeEventListener('pointerdown', onPointerDown);
@@ -386,7 +444,7 @@ export function mount(el: HTMLElement, ctx: GameContext): GameInstance {
 }
 
 /** Dole je stavový řádek a spodní řada sloupců. */
-export const hintAnchor = 'vpravo-nahore' as const;
+export const hintAnchor = 'vpravo-dole' as const;
 
 export const module_: GameModule = {
   manifest, mount, renderAttract, keymap, controlHints, hintAnchor,

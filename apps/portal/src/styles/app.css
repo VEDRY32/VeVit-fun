@@ -7,7 +7,9 @@
   align-items: center;
   gap: var(--s-lg);
   padding: var(--s-md) var(--s-lg);
-  border-bottom: 1px solid var(--linka);
+  /* Linka pod hlavičkou nese barvu značky — je to první zelená, kterou
+     hráč na stránce uvidí, a drží ji přes celou šířku. */
+  border-bottom: 1px solid color-mix(in srgb, var(--zelena) 40%, var(--linka));
   background: color-mix(in srgb, var(--noc) 88%, black);
   position: sticky;
   top: 0;
@@ -36,10 +38,15 @@
   height: 9px;
   border-radius: 2px;
 }
+/* Značkové barvy, ne kategorie: tři odstíny zelené a jedna oranžová. */
 .hlavicka__logo span:nth-child(1) { background: var(--zelena); }
-.hlavicka__logo span:nth-child(2) { background: var(--kat-logika); }
-.hlavicka__logo span:nth-child(3) { background: var(--kat-arkady); }
-.hlavicka__logo span:nth-child(4) { background: var(--kat-akce); }
+.hlavicka__logo span:nth-child(2) { background: var(--zelena-tmava); }
+.hlavicka__logo span:nth-child(3) { background: var(--oranzova); }
+.hlavicka__logo span:nth-child(4) { background: var(--zelena-tmavsi); }
+
+.hlavicka__znacka:hover {
+  color: var(--zelena);
+}
 
 .hlavicka__hledani {
   flex: 1;
@@ -48,12 +55,20 @@
 
 .hlavicka__hledani input {
   width: 100%;
-  padding: 10px var(--s-md);
+  height: var(--v-prvku);
+  padding: 0 12px;
   border-radius: var(--r-field);
   border: 1px solid var(--linka);
   background: var(--pult);
   color: var(--text);
   font: inherit;
+  transition: border-color var(--prechod);
+}
+
+.hlavicka__hledani input:focus {
+  border-color: var(--zelena);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--zelena) 18%, transparent);
+  outline: none;
 }
 
 .hlavicka__hledani input::placeholder {
@@ -117,7 +132,7 @@
 }
 
 .pata {
-  border-top: 1px solid var(--linka);
+  border-top: 1px solid color-mix(in srgb, var(--zelena) 30%, var(--linka));
   padding: var(--s-lg);
   color: var(--text-tlumeny);
   font-size: var(--fs-xs);
@@ -147,6 +162,7 @@
 .hero__plocha:hover,
 .hero__plocha:focus-visible {
   border-color: var(--akcent);
+  box-shadow: var(--zar-primarni);
 }
 
 .hero__plocha canvas {
@@ -163,12 +179,23 @@
   flex-direction: column;
   gap: var(--s-xs);
   padding: var(--s-lg);
-  background: linear-gradient(to top, rgba(15, 28, 63, 0.95), transparent);
+  /* Popisek leží na ukázce hry, která může být světlá i tmavá — přechod
+     proto musí být dost hustý, aby text zůstal čitelný vždycky. */
+  background: linear-gradient(
+    to top,
+    rgba(8, 9, 12, 0.96) 0%,
+    rgba(8, 9, 12, 0.86) 45%,
+    transparent 100%
+  );
 }
 
 .hero__stitek {
   font-size: var(--fs-xs);
-  color: var(--akcent);
+  /* Značková zelená, ne barva kategorie: „Hra dne" je hlas portálu. */
+  color: var(--zelena);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .hero__nazev {
@@ -185,6 +212,7 @@
 .vyzvy {
   background: var(--pult);
   border: 1px solid var(--linka);
+  border-top: 2px solid var(--zelena);
   border-radius: var(--r-tile);
   padding: var(--s-lg);
 }
@@ -237,6 +265,19 @@
 
 .police__nazev {
   font-size: var(--fs-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+/* Krátký zelený praporek před názvem police — rytmus stránky drží značka. */
+.police__nazev::before {
+  content: '';
+  width: 3px;
+  align-self: stretch;
+  min-height: 1em;
+  border-radius: 2px;
+  background: var(--zelena);
 }
 
 .police__ovladani {
@@ -248,13 +289,12 @@
 
 .police__vice {
   font-size: var(--fs-xs);
-  color: var(--text-tlumeny);
+  color: var(--zelena);
   border-bottom: 1px solid transparent;
 }
 
 .police__vice:hover {
-  color: var(--text);
-  border-bottom-color: var(--akcent);
+  border-bottom-color: var(--zelena);
 }
 
 .police__sipka {
@@ -305,14 +345,15 @@
   overflow: hidden;
   background: var(--pult);
   border: 1px solid var(--linka);
-  transition: border-color var(--prechod), transform var(--prechod);
-  /* Zkosený roh — tvar herní kazety. */
+  transition: border-color var(--prechod), transform var(--prechod), background var(--prechod);
+  /* Zkosený roh — tvar herní kazety. Ořezává i stín, proto tu záře není. */
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
 
 .dlazdice__odkaz:hover,
 .dlazdice__odkaz:focus-visible {
   border-color: var(--akcent);
+  background: var(--pult-svetly);
   transform: translateY(-2px);
 }
 
@@ -377,7 +418,7 @@
   height: 34px;
   border-radius: 50%;
   border: 0;
-  background: rgba(15, 28, 63, 0.7);
+  background: rgba(8, 9, 12, 0.7);
   color: var(--text);
   display: grid;
   place-items: center;
@@ -555,12 +596,25 @@
   font-size: var(--fs-xs);
 }
 
+.prekryv__ovladani {
+  list-style: none;
+  margin: 0;
+  padding: var(--s-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+
+.prekryv__ovladani li,
 .ovladani li {
   display: flex;
   align-items: center;
   gap: var(--s-sm);
 }
 
+.prekryv__ovladani kbd,
 .ovladani kbd,
 .napoveda__klavesa {
   font-family: var(--font-text);
@@ -639,7 +693,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: rgba(15, 28, 63, 0.82);
+  background: rgba(8, 9, 12, 0.82);
   border: 1px solid var(--linka);
   border-radius: var(--r-button);
   font-size: 12px;
@@ -662,8 +716,8 @@
   transform: translate(-50%, -50%);
   pointer-events: auto;
   border-radius: 50%;
-  border: 1.5px solid rgba(238, 242, 255, 0.35);
-  background: rgba(23, 42, 87, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  background: rgba(24, 27, 33, 0.55);
   color: var(--text);
   font-size: 15px;
   display: grid;
@@ -676,7 +730,7 @@
 }
 
 .dotyk__tlacitko:active {
-  background: rgba(47, 210, 122, 0.35);
+  background: rgba(16, 185, 129, 0.35);
 }
 
 /* Na zařízení s myší dotykový overlay nepatří. */
@@ -694,7 +748,7 @@
   z-index: 50;
   display: grid;
   place-items: center;
-  background: rgba(15, 28, 63, 0.86);
+  background: rgba(8, 9, 12, 0.86);
   padding: var(--s-md);
 }
 
@@ -720,18 +774,22 @@
 }
 
 .tlacitko {
-  display: inline-block;
-  padding: 11px var(--s-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--v-prvku);
+  padding: 0 var(--s-md);
   border-radius: var(--r-button);
   border: 1px solid var(--linka);
-  background: var(--noc);
+  background: var(--pult);
   color: var(--text);
   text-align: center;
   transition: border-color var(--prechod), background var(--prechod);
 }
 
 .tlacitko:hover {
-  border-color: var(--akcent);
+  background: var(--pult-svetly);
+  border-color: var(--linka-svetla);
 }
 
 .tlacitko--hlavni {
@@ -742,13 +800,49 @@
 }
 
 .tlacitko--hlavni:hover {
-  background: color-mix(in srgb, var(--zelena) 85%, white);
+  background: var(--zelena-tmava);
+  border-color: var(--zelena-tmava);
+}
+
+.tlacitko--hlavni:active {
+  background: var(--zelena-tmavsi);
+  border-color: var(--zelena-tmavsi);
+}
+
+.tlacitko--vedlejsi {
+  background: var(--oranzova);
+  border-color: var(--oranzova);
+  color: var(--noc);
+  font-weight: 600;
+}
+
+.tlacitko--vedlejsi:hover {
+  background: var(--oranzova-tmava);
+  border-color: var(--oranzova-tmava);
+}
+
+.tlacitko--vedlejsi:active {
+  background: var(--oranzova-tmavsi);
+  border-color: var(--oranzova-tmavsi);
 }
 
 .tlacitko--tiche {
   background: none;
   border-color: transparent;
   color: var(--text-tlumeny);
+}
+
+.tlacitko--tiche:hover {
+  background: var(--pult-svetly);
+  border-color: transparent;
+}
+
+.tlacitko[disabled],
+.tlacitko[aria-disabled='true'] {
+  background: var(--pult-svetly);
+  border-color: var(--linka);
+  color: var(--neaktivni);
+  cursor: not-allowed;
 }
 
 .vysledek__skore {
@@ -1078,7 +1172,7 @@ input[type='checkbox'] {
 }
 
 .vyzvy__cislo {
-  color: var(--text-tlumeny);
+  color: var(--zelena);
   font-size: var(--fs-xs);
 }
 

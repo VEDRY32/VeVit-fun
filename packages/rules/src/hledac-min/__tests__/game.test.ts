@@ -221,3 +221,29 @@ describe('Hledač min — čas', () => {
     expect(game.elapsedMs()).toBe(1000);
   });
 });
+
+describe('prohra', () => {
+  it('odkryje všechny miny a označí vlajky vedle', () => {
+    const game = createHledacMin('seed-prohra', {
+      width: 5, height: 5, mines: 3, noGuessing: false, questionMarks: false,
+    });
+    // První odkrytí rozmístí miny; teprve pak víme, kde jsou.
+    game.reveal(0, 0);
+    const mines = game.state.mines
+      .map((mine, i) => (mine ? i : -1))
+      .filter((i) => i >= 0);
+    expect(mines.length).toBe(3);
+
+    // Vlajka na bezpečné pole, které hráč odhadl špatně.
+    const safe = game.state.cells.findIndex((cell, i) => cell === 'hidden' && !game.state.mines[i]);
+    expect(safe).toBeGreaterThanOrEqual(0);
+    game.toggleFlag(safe % 5, Math.floor(safe / 5));
+
+    const boom = mines[0]!;
+    game.reveal(boom % 5, Math.floor(boom / 5));
+
+    expect(game.state.over).toBe(true);
+    for (const mine of mines) expect(game.state.cells[mine]).toBe('revealed');
+    expect(game.state.cells[safe]).toBe('wrongFlag');
+  });
+});
