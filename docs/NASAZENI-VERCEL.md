@@ -8,6 +8,11 @@ neběží; co to znamená pro hráče, je níž v „Co na Vercelu chybí".
 Naimportuj repozitář ve Vercelu a nech všechno na výchozích hodnotách.
 Zbytek si řekne `vercel.json` v kořeni:
 
+> **Root Directory musí zůstat kořen repa.** Vercel čte `vercel.json` právě
+> z něj. Když se při importu vybere podadresář (třeba `apps/api`, který
+> Vercel v monorepu rád nabídne sám), kořenový `vercel.json` se přeskočí
+> a nasazení spadne — viz „Když build spadne" níž.
+
 | Volba | Hodnota | Proč |
 |---|---|---|
 | Root Directory | `.` (kořen repa) | `vercel.json` počítá cesty od kořene; podadresář by build rozbil |
@@ -51,6 +56,39 @@ Bez API běží portál v lokálním režimu. Hry fungují všechny, ale:
 Až bude API kde hostovat, stačí do `vercel.json` přidat přepis `/api/(.*)` na
 jeho adresu a vynechávka v přepisu na `index.html` se postará o zbytek.
 Kompletní provoz se vším všudy popisuje [ops/RUNBOOK.md](../ops/RUNBOOK.md).
+
+## Když build spadne
+
+### `No Output Directory named "dist" found after the Build completed`
+
+Build proběhl, ale Vercel hledá výstup jinde, než kam vede `vercel.json` —
+skoro vždycky proto, že **Root Directory ukazuje do podadresáře**, takže se
+kořenový `vercel.json` vůbec nenačetl a `outputDirectory` spadlo na výchozí
+`dist`.
+
+Poznat to jde z instalační části logu. Vypsané závislosti patří tomu projektu,
+ve kterém Vercel stojí:
+
+```
++ @vevit-games/engine 0.1.0 <- ../../packages/engine
++ @vevit-games/rules 0.1.0 <- ../../packages/rules
++ fastify 5.12.4
+```
+
+`fastify` má z celého repa jenom `apps/api` — tohle je tedy `apps/api`, ne
+kořen. Portál by na jeho místě vypsal `react`, `react-dom` a `@vevit-games/ui`.
+Napovídá i prefix `../..` u průběhu instalace: pnpm běží dva adresáře hluboko.
+
+Náprava v Project Settings → Build & Deployment:
+
+1. **Root Directory** vyprázdnit (kořen repa).
+2. Zrušit ruční přepisy u **Build Command**, **Install Command** i **Output
+   Directory** — všechno tři si řekne `vercel.json`. Dokud v dashboardu něco
+   přebývá, není jasné, co vlastně platí.
+
+Root Directory na `apps/portal` **nestačí**: build by prošel, ale bez
+`vercel.json` by chyběly přepisy cest a přímé otevření `/cs/had` by skončilo
+na 404. Kdyby to někdy bylo potřeba, musí se `vercel.json` přesunout tam.
 
 ## Ověření po nasazení
 
