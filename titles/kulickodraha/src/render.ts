@@ -8,7 +8,9 @@
  */
 
 import { herniPaleta, withAlpha } from '@vevit-games/engine';
-import { TRACK_COLS, CAMERA_LOOKAHEAD, type KulickodrahaGame } from '@vevit-games/rules/kulickodraha';
+import {
+  TRACK_COLS, CAMERA_LOOKAHEAD, columnCenterX, type KulickodrahaGame,
+} from '@vevit-games/rules/kulickodraha';
 
 export const VIEW_WIDTH = 640;
 export const VIEW_HEIGHT = 400;
@@ -84,10 +86,14 @@ function drawTrack(ctx: CanvasRenderingContext2D, rows: boolean[][], camZ: numbe
     for (let j = 0; j < TRACK_COLS; j++) {
       if (!row[j]) continue;
 
-      const [ax, ay] = project(j - 3.5, 0, dzFar, playerX, camZ, width, height);
-      const [bx] = project(j - 2.5, 0, dzFar, playerX, camZ, width, height);
-      const [ex, ey] = project(j - 3.5, 0, dzNear, playerX, camZ, width, height);
-      const [fx] = project(j - 2.5, 0, dzNear, playerX, camZ, width, height);
+      // Okraje dlaždice kolem jejího středu — stejné mapování, jaké pro
+      // kolize používají pravidla, aby se obraz a kolize nerozešly.
+      const left = columnCenterX(j) - 0.5;
+      const right = columnCenterX(j) + 0.5;
+      const [ax, ay] = project(left, 0, dzFar, playerX, camZ, width, height);
+      const [bx] = project(right, 0, dzFar, playerX, camZ, width, height);
+      const [ex, ey] = project(left, 0, dzNear, playerX, camZ, width, height);
+      const [fx] = project(right, 0, dzNear, playerX, camZ, width, height);
 
       const wallHeight = ((40 - r + camZ) / 30) * height;
 
@@ -176,7 +182,7 @@ export function renderAttract(canvas: HTMLCanvasElement, t: number): void {
   if (!c) return;
   const { width, height } = canvas;
   const camZ = t * 6;
-  const playerX = TRACK_COLS / 2 + Math.sin(t * 0.6) * 1.5;
+  const playerX = Math.sin(t * 0.6) * 1.5;
   const theme: KulickodrahaTheme = {
     accent: herniPaleta.zluta, background: '#08090C', text: '#FFFFFF', textMuted: '#A1A1AA',
   };

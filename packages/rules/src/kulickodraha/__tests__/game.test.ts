@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { createKulickodraha, TRACK_COLS, ROWS_AHEAD, DEATH_Y } from '../game.js';
+import {
+  createKulickodraha, TRACK_COLS, ROWS_AHEAD, DEATH_Y, MIN_X, MAX_X, CAMERA_LOOKAHEAD,
+  columnAtX, columnCenterX,
+} from '../game.js';
 import { BIT } from '../../input-bits.js';
 
 describe('Kuličkodráha — generování dráhy', () => {
@@ -53,18 +56,81 @@ describe('Kuličkodráha — generování dráhy', () => {
   });
 });
 
+/**
+ * Dráha je vykreslená vycentrovaná na nule: dlaždice `j` zabírá herní x od
+ * `j-3.5` do `j-2.5`, takže její střed leží na `j-3`. Kolize musí sahat na
+ * tentýž sloupec, nad kterým kulička opravdu je — jinak hráč propadne
+ * viditelně pevnou dlaždicí.
+ */
+describe('Kuličkodráha — souřadnice dráhy', () => {
+  it('střed sloupce a sloupec pod polohou jsou navzájem opačné', () => {
+    for (let j = 0; j < TRACK_COLS; j++) {
+      expect(columnAtX(columnCenterX(j))).toBe(j);
+    }
+  });
+
+  it('dráha je vycentrovaná na nule', () => {
+    expect(columnCenterX(0)).toBe(-(TRACK_COLS - 1) / 2);
+    expect(columnCenterX(TRACK_COLS - 1)).toBe((TRACK_COLS - 1) / 2);
+  });
+
+  it('kulička startuje uprostřed dráhy, ne na její hraně', () => {
+    const game = createKulickodraha('start-uprostred');
+    expect(game.state.x).toBe(0);
+    expect(columnAtX(game.state.x)).toBe((TRACK_COLS - 1) / 2);
+  });
+
+  it('kulička nepropadne dlaždicí, která je pod ní vidět', () => {
+    const game = createKulickodraha('pevna-dlazdice');
+    // Pevný je jen ten jediný sloupec, nad kterým kulička opravdu stojí.
+    // Kdyby kolize sáhla na kterýkoliv jiný, kulička propadne — a přesně
+    // tak vypadá „hra se prohrála, i když jsem nikam nespadl".
+    const under = columnAtX(game.state.x);
+    const rows = Array.from({ length: 400 }, () => {
+      const row = Array(TRACK_COLS).fill(false) as boolean[];
+      row[under] = true;
+      return row;
+    });
+    game.state.rows = rows;
+
+    for (let i = 0; i < 600; i++) game.step(0);
+
+    expect(game.state.over).toBe(false);
+    expect(game.state.onGround).toBe(true);
+  });
+
+  it('díra přímo pod kuličkou ji naopak shodí', () => {
+    const game = createKulickodraha('dira-pod-nohama');
+    const under = columnAtX(game.state.x);
+    const rows = Array.from({ length: 400 }, () => Array(TRACK_COLS).fill(true) as boolean[]);
+    for (let r = 20; r < rows.length; r++) rows[r]![under] = false;
+    game.state.rows = rows;
+
+    let ticks = 0;
+    while (!game.state.over && ticks < 2000) {
+      game.step(0);
+      ticks++;
+    }
+    expect(game.state.over).toBe(true);
+  });
+});
+
 describe('Kuličkodráha — pohyb a skok', () => {
   it('řízení do stran posouvá kuličku a nepustí ji do nekonečna', () => {
     const game = createKulickodraha('rizeni');
     for (let i = 0; i < 500; i++) game.step(BIT.left);
-    expect(game.state.x).toBeGreaterThanOrEqual(-2);
+    expect(game.state.x).toBeGreaterThanOrEqual(MIN_X);
     const afterLeft = game.state.x;
 
     const game2 = createKulickodraha('rizeni2');
     for (let i = 0; i < 500; i++) game2.step(BIT.right);
-    expect(game2.state.x).toBeLessThanOrEqual(TRACK_COLS + 1);
+    expect(game2.state.x).toBeLessThanOrEqual(MAX_X);
 
     expect(afterLeft).toBeLessThan(game2.state.x);
+  });
+
+  it('mantinely jsou souměrné — dráha nemá jednu stranu delší', () => {
+    expect(MIN_X).toBe(-MAX_X);
   });
 
   it('drženie skoku dá vyšší a delší skok než ťuknutí', () => {
@@ -109,7 +175,7 @@ describe('Kuličkodráha — pohyb a skok', () => {
 
   it('pád do mezery bez skoku ukončí hru', () => {
     const game = createKulickodraha('mezera');
-    const col = Math.round(game.state.x);
+    const col = columnAtX(game.state.x);
     const rows = Array.from({ length: 300 }, () => Array(TRACK_COLS).fill(true));
     // Mezera od bezpečné zóny dál, v celém sloupci pod hráčem.
     for (let r = 35; r < 100; r++) rows[r]![col] = false;
@@ -148,5 +214,61 @@ describe('Kuličkodráha — pohyb a skok', () => {
       });
     };
     expect(play()).toBe(play());
+  });
+});
+
+/**
+ * Hratelnost. Kdyby se kolize a vykreslování rozešly v tom, nad kterým
+ * sloupcem kulička je, hráč by mířil jinam, než kam sahá kolize, a padal by
+ * skrz dlaždice, na kterých podle obrazovky stojí. Takový rozchod se navenek
+ * projeví jako „hra se prohrává bezdůvodně", a tenhle test ho chytí: bot,
+ * který řídí podle stejného mapování, musí přežít podstatně déle než kulička
+ * ponechaná bez řízení (ta spadne kolem 163. tiku).
+ */
+describe('Kuličkodráha — hratelnost', () => {
+  /** Míří na nejbližší pevnou dlaždici před sebou, nad dírou skáče. */
+  const playBot = (seed: string, ticks: number): number => {
+    const game = createKulickodraha(seed);
+    for (let i = 0; i < ticks; i++) {
+      const here = Math.floor(game.state.z) + CAMERA_LOOKAHEAD;
+      const ahead = game.state.rows[here + 1] ?? game.state.rows[here];
+      const col = columnAtX(game.state.x);
+      let mask = 0;
+
+      if (ahead) {
+        const solid: number[] = [];
+        for (let j = 0; j < TRACK_COLS; j++) if (ahead[j]) solid.push(j);
+        if (solid.length > 0) {
+          let best = solid[0]!;
+          for (const j of solid) if (Math.abs(j - col) < Math.abs(best - col)) best = j;
+          const target = columnCenterX(best);
+          if (game.state.x < target - 0.05) mask |= BIT.right;
+          else if (game.state.x > target + 0.05) mask |= BIT.left;
+        } else {
+          mask |= BIT.a;
+        }
+      }
+      if (game.state.rows[here]?.[col] !== true && game.state.onGround) mask |= BIT.a;
+
+      game.step(mask);
+      if (game.state.over) return i;
+    }
+    return ticks;
+  };
+
+  it('kdo řídí, ten se na dráze udrží', () => {
+    for (const seed of ['a', 'b', 'c', 'd', 'e']) {
+      expect(playBot(seed, 5000)).toBeGreaterThan(400);
+    }
+  });
+
+  it('řízení je znát — bot vydrží násobně déle než kulička bez vstupu', () => {
+    const game = createKulickodraha('c');
+    let bezVstupu = 0;
+    while (!game.state.over && bezVstupu < 5000) {
+      game.step(0);
+      bezVstupu++;
+    }
+    expect(playBot('c', 5000)).toBeGreaterThan(bezVstupu * 2);
   });
 });

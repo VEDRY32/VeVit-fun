@@ -28,9 +28,24 @@ const MAX_SPEED = 0.5;
 const SPEED_GAIN_DIVISOR = 5000;
 const SCORE_PER_Z = 10;
 
+/**
+ * Dráha je vycentrovaná na nule: dlaždice `j` zabírá herní x od `j-3.5` do
+ * `j-2.5`, takže její střed leží na `j-3`. Vykreslování z toho vychází, a
+ * kolize proto musí počítat stejně — jinak kulička propadne dlaždicí, na
+ * které podle obrazovky stojí.
+ */
+const CENTER_OFFSET = (TRACK_COLS - 1) / 2;
+
+/** Střed sloupce `j` v herních souřadnicích. */
+export const columnCenterX = (j: number): number => j - CENTER_OFFSET;
+
+/** Sloupec, nad kterým leží daná poloha. */
+export const columnAtX = (x: number): number => Math.round(x + CENTER_OFFSET);
+
 const STEER_SPEED = 0.1;
-const MIN_X = -2;
-const MAX_X = TRACK_COLS + 1;
+/** O jedno pole za hranu dráhy — dál už se jen padá. */
+export const MIN_X = columnCenterX(0) - 1;
+export const MAX_X = columnCenterX(TRACK_COLS - 1) + 1;
 
 const JUMP_VELOCITY = 3.4;
 const GRAVITY = 0.2;
@@ -66,7 +81,7 @@ export function createKulickodraha(seed: string): KulickodrahaGame {
   const rng: Rng = createRng(seed);
 
   const state: KulickodrahaState = {
-    x: TRACK_COLS / 2,
+    x: 0,
     y: 0,
     vy: 0,
     onGround: true,
@@ -148,7 +163,7 @@ export function createKulickodraha(seed: string): KulickodrahaGame {
 
       // --- Dopad, nebo propadnutí mezerou ---
       const row = state.rows[Math.floor(state.z) + CAMERA_LOOKAHEAD];
-      const col = Math.round(state.x);
+      const col = columnAtX(state.x);
       const tileHere = row != null && col >= 0 && col < TRACK_COLS && row[col] === true;
       if (state.y <= 0 && tileHere) {
         state.y = 0;
