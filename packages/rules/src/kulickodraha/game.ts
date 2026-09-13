@@ -47,9 +47,14 @@ const STEER_SPEED = 0.1;
 export const MIN_X = columnCenterX(0) - 1;
 export const MAX_X = columnCenterX(TRACK_COLS - 1) + 1;
 
-const JUMP_VELOCITY = 3.4;
-const GRAVITY = 0.2;
-const JUMP_HOLD_BOOST = 0.12;
+/**
+ * Skok se měří v šířkách dlaždice — ta je široká 1. Ťuknutí vynese kuličku
+ * něco přes jednu dlaždici, držení skoro dvě; víc by ji vystřelilo mimo
+ * obraz, protože kamera je nízko nad dráhou.
+ */
+const JUMP_VELOCITY = 0.13;
+const GRAVITY = 0.008;
+const JUMP_HOLD_BOOST = 0.005;
 const MAX_HOLD_TICKS = 12;
 
 export interface KulickodrahaState {

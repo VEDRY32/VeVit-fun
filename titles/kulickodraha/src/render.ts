@@ -79,9 +79,11 @@ function drawTrack(ctx: CanvasRenderingContext2D, rows: boolean[][], camZ: numbe
     const row = rows[r];
     if (!row) continue;
     const band = TRACK_BANDS[(r >> 7) % TRACK_BANDS.length]!;
-    const dzFar = r - camZ;
-    if (dzFar <= 0.1) continue;
-    const dzNear = dzFar + 1;
+    // Větší `dz` je dál od kamery: přední hrana dlaždice leží na `dzFront`,
+    // zadní o řádek dál.
+    const dzFront = r - camZ;
+    if (dzFront <= 0.1) continue;
+    const dzBack = dzFront + 1;
 
     for (let j = 0; j < TRACK_COLS; j++) {
       if (!row[j]) continue;
@@ -90,24 +92,32 @@ function drawTrack(ctx: CanvasRenderingContext2D, rows: boolean[][], camZ: numbe
       // kolize používají pravidla, aby se obraz a kolize nerozešly.
       const left = columnCenterX(j) - 0.5;
       const right = columnCenterX(j) + 0.5;
-      const [ax, ay] = project(left, 0, dzFar, playerX, camZ, width, height);
-      const [bx] = project(right, 0, dzFar, playerX, camZ, width, height);
-      const [ex, ey] = project(left, 0, dzNear, playerX, camZ, width, height);
-      const [fx] = project(right, 0, dzNear, playerX, camZ, width, height);
+      const [frontLeftX, frontY] = project(left, 0, dzFront, playerX, camZ, width, height);
+      const [frontRightX] = project(right, 0, dzFront, playerX, camZ, width, height);
+      const [backLeftX, backY] = project(left, 0, dzBack, playerX, camZ, width, height);
+      const [backRightX] = project(right, 0, dzBack, playerX, camZ, width, height);
 
       const wallHeight = ((40 - r + camZ) / 30) * height;
+      // Šachovnice: sousední dlaždice se liší odstínem, jinak dráha splyne.
+      const light = (r + j) % 2 === 0;
 
-      // Boční stěna dlaždice — tmavší, dává dojem hloubky.
-      ctx.fillStyle = shade(band, -0.55);
-      ctx.fillRect(ex, ey, fx - ex, wallHeight);
+      // Tři plochy kvádru. Stěny jsou výrazně tmavší než vršek — jinak není
+      // poznat, kde dlaždice končí a kde se po ní dá jet.
+      // Zadní stěna; vršek ji pak zase překryje.
+      ctx.fillStyle = shade(band, light ? -0.38 : -0.46);
+      ctx.fillRect(backLeftX, backY, backRightX - backLeftX, wallHeight);
 
-      // Vršek dlaždice — jasnější, střídá odstín podle sudosti pole.
-      ctx.fillStyle = shade(band, (r + j) % 2 === 0 ? 0.15 : -0.1);
+      // Přední stěna, nejtmavší — odděluje řádky od sebe.
+      ctx.fillStyle = shade(band, light ? -0.70 : -0.76);
+      ctx.fillRect(frontLeftX, frontY, frontRightX - frontLeftX, wallHeight);
+
+      // Vršek — plocha, po které se jede, proto jasně nejsvětlejší.
+      ctx.fillStyle = shade(band, light ? 0.62 : 0.3);
       ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.lineTo(bx, ay);
-      ctx.lineTo(fx, ey);
-      ctx.lineTo(ex, ey);
+      ctx.moveTo(frontLeftX, frontY);
+      ctx.lineTo(frontRightX, frontY);
+      ctx.lineTo(backRightX, backY);
+      ctx.lineTo(backLeftX, backY);
       ctx.closePath();
       ctx.fill();
     }

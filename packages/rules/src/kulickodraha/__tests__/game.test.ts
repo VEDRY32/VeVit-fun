@@ -163,6 +163,31 @@ describe('Kuličkodráha — pohyb a skok', () => {
     expect(heldAirTicks).toBeGreaterThan(tapAirTicks);
   });
 
+  /**
+   * Doba ve vzduchu sama o sobě nestačí — ta byla správná i tehdy, kdy skok
+   * vynášel kuličku 29 dlaždic vysoko, tedy dávno mimo obraz. Hlídá se proto
+   * výška v šířkách dlaždice, protože kamera je nízko nad dráhou.
+   */
+  it('skok zůstává v měřítku dráhy', () => {
+    const peakOf = (hold: boolean): number => {
+      const game = createKulickodraha('vyska');
+      game.state.rows = Array.from({ length: 600 }, () => Array(TRACK_COLS).fill(true));
+      game.step(BIT.a);
+      let peak = 0;
+      let ticks = 0;
+      while (!game.state.onGround && ticks < 400) {
+        game.step(hold ? BIT.a : 0);
+        peak = Math.max(peak, game.state.y);
+        ticks++;
+      }
+      return peak;
+    };
+
+    expect(peakOf(false)).toBeGreaterThan(0.6);
+    expect(peakOf(false)).toBeLessThan(1.6);
+    expect(peakOf(true)).toBeLessThan(2.5);
+  });
+
   it('skok jde jen ze země, ne podruhé ve vzduchu', () => {
     const game = createKulickodraha('dvojskok');
     game.state.rows = Array.from({ length: 300 }, () => Array(TRACK_COLS).fill(true));
